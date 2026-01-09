@@ -1,33 +1,109 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
+import { Tabs } from "expo-router";
+import { Book, BookOpen, Home, User } from "lucide-react-native";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
+export default function RootLayout() {
+  const insets = useSafeAreaInsets();
+  
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
-      }}>
+        tabBarActiveTintColor: "#163B3C",
+        tabBarInactiveTintColor: "#9CA3AF",
+        tabBarStyle: {
+          backgroundColor: "#FFFFFF",
+          borderTopWidth: 1,
+          borderTopColor: "#E5E7EB",
+          height: 70 + (insets.bottom || 0),
+          paddingBottom: Math.max(insets.bottom, 8),
+          paddingTop: 8,
+          elevation: 8,
+          shadowColor: "#000",
+          shadowOffset: {
+            width: 0,
+            height: -2,
+          },
+          shadowOpacity: 0.1,
+          shadowRadius: 3,
+        },
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: "600",
+          marginTop: 4,
+        },
+        headerStyle: {
+          backgroundColor: "#fff",
+          elevation: 0,
+          shadowOpacity: 0,
+        },
+        headerTintColor: "#000",
+        headerTitleStyle: {
+          fontWeight: "bold",
+          fontSize: 16,
+        },
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: "Home",
+          tabBarIcon: ({ color, size, focused }) => (
+            <Home
+              color={color}
+              size={size}
+              strokeWidth={focused ? 2.5 : 2}
+            />
+          ),
+          headerTitle: "Home",
+          headerShown: false,
         }}
       />
+
       <Tabs.Screen
-        name="explore"
+        name="library"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: "Library",
+          tabBarIcon: ({ color, size, focused }) => (
+            <Book
+              color={color}
+              size={size}
+              strokeWidth={focused ? 2.5 : 2}
+            />
+          ),
+          headerTitle: "Library",
+          headerShown: false,
+        }}
+      />
+      
+      <Tabs.Screen
+        name="courses"
+        options={{
+          title: "Courses",
+          tabBarIcon: ({ color, size, focused }) => (
+            <BookOpen
+              color={color}
+              size={size}
+              strokeWidth={focused ? 2.5 : 2}
+            />
+          ),
+          headerTitle: "All Courses",
+          headerShown: false,
+        }}
+      />
+      
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Profile",
+          tabBarIcon: ({ color, size, focused }) => (
+            <User
+              color={color}
+              size={size}
+              strokeWidth={focused ? 2.5 : 2}
+            />
+          ),
+          headerTitle: "My Profile",
+          headerShown: false,
         }}
       />
     </Tabs>
