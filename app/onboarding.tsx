@@ -1,6 +1,6 @@
-import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
-import { useRef, useState } from 'react';
+import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
+import { useRef, useState } from "react";
 import {
   Dimensions,
   FlatList,
@@ -10,27 +10,27 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { Colors } from '../constants/Colors';
-import { setOnboardingDone } from '../utils/storage';
+} from "react-native";
+import { Colors } from "../constants/Colors";
+import { setOnboardingDone } from "../utils/storage";
 
-const { width, height } = Dimensions.get('window');
+const { width, height } = Dimensions.get("window");
 
 const ONBOARDING_DATA = [
   {
-    id: '1',
-    title: 'Advance Your Skills with Top Dermatologists',
-    image: require('@/assets/images/onbording-male-photo.png'),
+    id: "1",
+    title: "Advance Your Skills with Top Dermatologists",
+    image: require("@/assets/images/onbording-male-photo.png"),
   },
   {
-    id: '2',
-    title: 'Flexible Learning for Busy Medical Professionals',
-    image: require('@/assets/images/onbording-female-photo.png'),
+    id: "2",
+    title: "Flexible Learning for Busy Medical Professionals",
+    image: require("@/assets/images/onbording-female-photo.png"),
   },
   {
-    id: '3',
-    title: 'Earn Globally-Recognized Medical Certificates',
-    image: require('@/assets/images/onbording-female-photo-certificate.png'),
+    id: "3",
+    title: "Earn Globally-Recognized Medical Certificates",
+    image: require("@/assets/images/onbording-female-photo-certificate.png"),
   },
 ];
 
@@ -45,13 +45,13 @@ export default function OnboardingScreen() {
       setCurrentIndex(nextIndex);
     } else {
       await setOnboardingDone();
-      router.replace('/(auth)/login');
+      // router.replace('/(auth)/login');
     }
   };
 
   const handleSkip = async () => {
     await setOnboardingDone();
-    router.replace('/(auth)/login');
+    // router.replace('/(auth)/login');
   };
 
   const renderItem = ({ item, index }: { item: any; index: number }) => (
@@ -65,7 +65,11 @@ export default function OnboardingScreen() {
         />
         {/* White overlay gradient at bottom */}
         <LinearGradient
-          colors={['transparent', 'rgba(255,255,255,0.3)', 'rgba(255,255,255,0.9)']}
+          colors={[
+            "transparent",
+            "rgba(255,255,255,0.3)",
+            "rgba(255,255,255,0.9)",
+          ]}
           style={styles.imageGradient}
         />
       </View>
@@ -132,7 +136,9 @@ export default function OnboardingScreen() {
             end={{ x: 1, y: 0 }}
           >
             <Text style={styles.nextButtonText}>
-              {currentIndex === ONBOARDING_DATA.length - 1 ? 'Get Started' : 'Next'}
+              {currentIndex === ONBOARDING_DATA.length - 1
+                ? "Get Started"
+                : "Next"}
             </Text>
           </LinearGradient>
         </TouchableOpacity>
@@ -144,10 +150,10 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   skipButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 50,
     right: 20,
     zIndex: 10,
@@ -157,27 +163,27 @@ const styles = StyleSheet.create({
   skipText: {
     fontSize: 16,
     color: Colors.textSecondary,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   slide: {
     width,
     height: height,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   imageContainer: {
     width: width,
     height: height * 0.6,
-    position: 'relative',
-    backgroundColor: '#F8F8F8',
-    overflow: 'hidden',
+    position: "relative",
+    backgroundColor: "#F8F8F8",
+    overflow: "hidden",
   },
   doctorImage: {
-    width: '100%',
-    height: '100%',
-    marginTop:10,
+    width: "100%",
+    height: "100%",
+    marginTop: 10,
   },
   imageGradient: {
-    position: 'absolute',
+    position: "absolute",
     bottom: -10,
     left: 0,
     right: 0,
@@ -187,29 +193,29 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 32,
     paddingTop: 40,
-    justifyContent: 'flex-start'
+    justifyContent: "flex-start",
   },
   title: {
     fontSize: 22,
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.text,
     marginBottom: 16,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 30,
   },
   bottomContainer: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
     paddingHorizontal: 32,
     paddingBottom: 100,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   pagination: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 32,
   },
   dot: {
@@ -223,13 +229,13 @@ const styles = StyleSheet.create({
   },
   inactiveDot: {
     width: 8,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: "#E0E0E0",
   },
   nextButton: {
-    width: '100%',
+    width: "100%",
     height: 56,
     borderRadius: 28,
-    overflow: 'hidden',
+    overflow: "hidden",
     shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -238,13 +244,13 @@ const styles = StyleSheet.create({
   },
   nextButtonGradient: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   nextButtonText: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontWeight: "700",
+    color: "#FFFFFF",
     letterSpacing: 0.5,
   },
 });

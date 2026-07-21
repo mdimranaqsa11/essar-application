@@ -1,28 +1,28 @@
-import { router } from 'expo-router';
-import { useEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { Colors } from '../constants/Colors';
-import { getAuthData, isOnboardingDone } from '../utils/storage';
+import { router } from "expo-router";
+import { useEffect } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { Colors } from "../constants/Colors";
+import { getAuthData, isOnboardingDone } from "../utils/storage";
 
 export default function SplashScreen() {
-  useEffect(() => {
-    checkAuth();
-  }, []);
+  // useEffect(() => {
+  //   checkAuth();
+  // }, []);
 
-  const checkAuth = async () => {
-    setTimeout(async () => {
-      const authData = await getAuthData();
-      const onboardingDone = await isOnboardingDone();
+  // const checkAuth = async () => {
+  //   setTimeout(async () => {
+  //     const authData = await getAuthData();
+  //     const onboardingDone = await isOnboardingDone();
 
-      if (authData) {
-        router.replace('/(tabs)');
-      } else if (onboardingDone) {
-        router.replace('/(auth)/login');
-      } else {
-        router.replace('/onboarding');
-      }
-    }, 2000);
-  };
+  //     if (authData) {
+  //       router.replace("/(tabs)");
+  //     } else if (onboardingDone) {
+  //       router.replace("/(auth)/login");
+  //     } else {
+  //       router.replace("/onboarding");
+  //     }
+  //   }, 2000);
+  // };
 
   return (
     <View style={styles.container}>
@@ -38,11 +38,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   logoContainer: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   logo: {
     fontSize: 80,
@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 48,
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.white,
     marginBottom: 8,
   },
