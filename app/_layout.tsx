@@ -3,6 +3,7 @@ import { StatusBar } from "expo-status-bar";
 
 export default function RootLayout() {
   return (
+    // b9b98420-6d82-433e-83b3-25f297d12fcf
     <>
       <StatusBar style="auto" />
       <Stack
