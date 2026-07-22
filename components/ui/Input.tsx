@@ -42,6 +42,7 @@ export const Input: React.FC<InputProps> = ({
             style={styles.icon}
           />
         )}
+        
         <TextInput
           style={[styles.input, multiline && styles.multiline]}
           placeholder={placeholder}
