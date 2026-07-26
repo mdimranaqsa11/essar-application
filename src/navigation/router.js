@@ -29,23 +29,27 @@ function resolve(path) {
       return { name: 'MainTabs', params: { screen: 'Courses' } };
     case '/(tabs)/profile':
       return { name: 'MainTabs', params: { screen: 'Profile' } };
+    case '/(tabs)/admin':
+      return { name: 'MainTabs', params: { screen: 'Admin' } };
     case '/support':
       return { name: 'Support' };
+    case '/about':
+      return { name: 'About' };
     default:
       throw new Error(`router: unmapped path "${path}"`);
   }
 }
 
 export const router = {
-  push(path) {
+  push(path, extraParams) {
     if (!navigationRef.isReady()) return;
     const { name, params } = resolve(path);
-    navigationRef.dispatch(CommonActions.navigate({ name, params }));
+    navigationRef.dispatch(CommonActions.navigate({ name, params: { ...params, ...extraParams } }));
   },
-  replace(path) {
+  replace(path, extraParams) {
     if (!navigationRef.isReady()) return;
     const { name, params } = resolve(path);
-    navigationRef.dispatch(StackActions.replace(name, params));
+    navigationRef.dispatch(StackActions.replace(name, { ...params, ...extraParams }));
   },
   back() {
     if (navigationRef.isReady() && navigationRef.canGoBack()) {

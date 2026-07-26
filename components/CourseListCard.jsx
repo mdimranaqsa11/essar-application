@@ -1,0 +1,333 @@
+import React, { useEffect, useState } from 'react';
+import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { Colors } from '@/constants/Colors';
+import { router } from '@/src/navigation/router';
+import { coursesService } from '@/services/courses';
+import { deriveCourseType } from '@/utils/courseType';
+import { getAuthData, getBookmarkedCourseIds, toggleBookmarkedCourse } from '@/utils/storage';
+
+export function CourseListCard({ course, isEnrolled = false, isAdmin = false }) {
+  const [bookmarked, setBookmarked] = useState(false);
+  const [enrolling, setEnrolling] = useState(false);
+  const type = deriveCourseType(course.title);
+  const discountPercentage = course.originalPrice
+    ? Math.round(((course.originalPrice - course.price) / course.originalPrice) * 100)
+    : 0;
+
+  useEffect(() => {
+    getBookmarkedCourseIds().then((ids) => setBookmarked(ids.includes(course.$id)));
+  }, [course.$id]);
+
+  const handleBookmark = async () => {
+    const next = await toggleBookmarkedCourse(course.$id);
+    setBookmarked(next.includes(course.$id));
+  };
+
+  const handlePress = () => router.push(`/course/${course.$id}`);
+
+  const handleEnroll = async () => {
+    const authData = await getAuthData();
+    if (!authData) {
+      Alert.alert(
+        'Login Required',
+        'Please login to enroll in this course',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Login', onPress: () => router.push('/(auth)/login') },
+        ]
+      );
+      return;
+    }
+
+    setEnrolling(true);
+    try {
+      await coursesService.enrollInCourse(authData.user.$id, course.$id);
+      Alert.alert('Success', 'You are now enrolled in this course!');
+    } catch (error) {
+      Alert.alert('Enrollment Failed', error.message || 'Please try again');
+    } finally {
+      setEnrolling(false);
+    }
+  };
+
+  return (
+    <TouchableOpacity style={styles.card} activeOpacity={0.9} onPress={handlePress}>
+      <View style={styles.imageContainer}>
+        <Image source={course.thumbnail} style={styles.image} resizeMode="cover" />
+        {course.badge && (
+          <View style={styles.popularBadge}>
+            <Ionicons name="flame" size={11} color={Colors.white} />
+            <Text style={styles.popularBadgeText}>{course.badge.toUpperCase()}</Text>
+          </View>
+        )}
+      </View>
+
+      <View style={styles.content}>
+        <View style={styles.topRow}>
+          {type ? (
+            <View style={[styles.typeBadge, { backgroundColor: type.tint }]}>
+              <Text style={[styles.typeBadgeText, { color: type.color }]}>
+                {type.label.toUpperCase()}
+              </Text>
+            </View>
+          ) : (
+            <View />
+          )}
+          <TouchableOpacity onPress={handleBookmark} hitSlop={8}>
+            <Ionicons
+              name={bookmarked ? 'heart' : 'heart-outline'}
+              size={20}
+              color={bookmarked ? '#e11d48' : Colors.textLight}
+            />
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.title} numberOfLines={2}>
+          {course.title}
+        </Text>
+
+        {course.description && (
+          <Text style={styles.description} numberOfLines={2}>
+            {course.description}
+          </Text>
+        )}
+
+        <View style={styles.statsRow}>
+          {course.rating > 0 && (
+            <View style={styles.statItem}>
+              <Ionicons name="star" size={13} color="#fbbf24" />
+              <Text style={styles.statText}>{course.rating.toFixed(1)}</Text>
+              {course.total_reviews > 0 && (
+                <Text style={styles.statTextLight}>({course.total_reviews} Reviews)</Text>
+              )}
+            </View>
+          )}
+          {course.enrolledCount > 0 && (
+            <View style={styles.statItem}>
+              <Ionicons name="people-outline" size={13} color={Colors.textLight} />
+              <Text style={styles.statTextLight}>{course.enrolledCount}+ Students</Text>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.metaRow}>
+          {course.duration && (
+            <View style={styles.metaChip}>
+              <Ionicons name="time-outline" size={12} color={Colors.textSecondary} />
+              <Text style={styles.metaChipText}>{course.duration}</Text>
+            </View>
+          )}
+          {course.mode && (
+            <View style={styles.metaChip}>
+              <Ionicons
+                name={course.mode === 'Online' ? 'laptop-outline' : 'videocam-outline'}
+                size={12}
+                color={Colors.textSecondary}
+              />
+              <Text style={styles.metaChipText}>{course.mode}</Text>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.footerRow}>
+          <View style={styles.priceGroup}>
+            <Text style={styles.price}>₹{course.price?.toLocaleString('en-IN')}</Text>
+            {discountPercentage > 0 && (
+              <View style={styles.priceMetaRow}>
+                <Text style={styles.originalPrice}>
+                  ₹{course.originalPrice.toLocaleString('en-IN')}
+                </Text>
+                <Text style={styles.discountText}>{discountPercentage}% off</Text>
+              </View>
+            )}
+          </View>
+          {!isAdmin &&
+            (isEnrolled ? (
+              <View style={styles.enrolledBadge}>
+                <Ionicons name="checkmark-circle" size={14} color={Colors.primary} />
+                <Text style={styles.enrolledBadgeText}>Enrolled</Text>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={styles.enrollButton}
+                onPress={handleEnroll}
+                disabled={enrolling}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.enrollButtonText}>
+                  {enrolling ? 'Enrolling...' : 'Enroll Now'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+const styles = StyleSheet.create({
+  card: {
+    flexDirection: 'row',
+    backgroundColor: Colors.white,
+    borderRadius: 18,
+    overflow: 'hidden',
+    marginBottom: 16,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  imageContainer: {
+    width: 130,
+    height: 230,
+    position: 'relative',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+  },
+  popularBadge: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Colors.primary,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  popularBadgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: Colors.white,
+  },
+  content: {
+    flex: 1,
+    padding: 12,
+  },
+  topRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 6,
+  },
+  typeBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  typeBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  title: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.text,
+    lineHeight: 20,
+    marginBottom: 4,
+  },
+  description: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    lineHeight: 16,
+    marginBottom: 8,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 8,
+  },
+  statItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  statText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.text,
+  },
+  statTextLight: {
+    fontSize: 12,
+    color: Colors.textLight,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 10,
+  },
+  metaChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Colors.surface,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  metaChipText: {
+    fontSize: 11,
+    color: Colors.textSecondary,
+    fontWeight: '600',
+  },
+  footerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  priceGroup: {
+    flexShrink: 1,
+  },
+  price: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.text,
+  },
+  priceMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 2,
+  },
+  originalPrice: {
+    fontSize: 11,
+    color: Colors.textLight,
+    textDecorationLine: 'line-through',
+  },
+  discountText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#4CAF50',
+  },
+  enrollButton: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 18,
+  },
+  enrollButtonText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.white,
+  },
+  enrolledBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(0, 150, 137, 0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 18,
+  },
+  enrolledBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.primary,
+  },
+});

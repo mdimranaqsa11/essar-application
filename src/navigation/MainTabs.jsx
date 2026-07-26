@@ -1,42 +1,37 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Book, BookOpen, Home, User } from 'lucide-react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback, useState } from 'react';
+import { CustomTabBar } from '@/components/CustomTabBar';
+import { AdminPanelScreen } from '@/src/screens/admin/AdminPanelScreen';
 import { CoursesScreen } from '@/src/screens/tabs/CoursesScreen';
 import { HomeScreen } from '@/src/screens/tabs/HomeScreen';
 import { LibraryScreen } from '@/src/screens/tabs/LibraryScreen';
 import { ProfileScreen } from '@/src/screens/tabs/ProfileScreen';
+import { getAuthData } from '@/utils/storage';
 
 const Tab = createBottomTabNavigator();
 
 export function MainTabs() {
-  const insets = useSafeAreaInsets();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Re-check the role each time the tabs regain focus so Admin access appears/disappears
+  // right after login, logout or a role change without needing a full app restart.
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      getAuthData().then((authData) => {
+        if (active) setIsAdmin(authData?.user?.role === 'admin');
+      });
+      return () => {
+        active = false;
+      };
+    }, [])
+  );
 
   return (
     <Tab.Navigator
+      tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
-        tabBarActiveTintColor: '#163B3C',
-        tabBarInactiveTintColor: '#9CA3AF',
-        tabBarStyle: {
-          backgroundColor: '#FFFFFF',
-          borderTopWidth: 1,
-          borderTopColor: '#E5E7EB',
-          height: 70 + (insets.bottom || 0),
-          paddingBottom: Math.max(insets.bottom, 8),
-          paddingTop: 8,
-          elevation: 8,
-          shadowColor: '#000',
-          shadowOffset: {
-            width: 0,
-            height: -2,
-          },
-          shadowOpacity: 0.1,
-          shadowRadius: 3,
-        },
-        tabBarLabelStyle: {
-          fontSize: 10,
-          fontWeight: '600',
-          marginTop: 4,
-        },
         headerStyle: {
           backgroundColor: '#fff',
           elevation: 0,
@@ -52,54 +47,36 @@ export function MainTabs() {
       <Tab.Screen
         name="Home"
         component={HomeScreen}
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Home color={color} size={size} strokeWidth={focused ? 2.5 : 2} />
-          ),
-          headerTitle: 'Home',
-          headerShown: false,
-        }}
+        options={{ title: 'Home', headerTitle: 'Home', headerShown: false }}
       />
 
       <Tab.Screen
         name="Library"
         component={LibraryScreen}
-        options={{
-          title: 'Library',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Book color={color} size={size} strokeWidth={focused ? 2.5 : 2} />
-          ),
-          headerTitle: 'Library',
-          headerShown: false,
-        }}
+        options={{ title: 'My Learning', headerTitle: 'My Learning', headerShown: false }}
       />
 
       <Tab.Screen
         name="Courses"
         component={CoursesScreen}
-        options={{
-          title: 'Courses',
-          tabBarIcon: ({ color, size, focused }) => (
-            <BookOpen color={color} size={size} strokeWidth={focused ? 2.5 : 2} />
-          ),
-          headerTitle: 'All Courses',
-          headerShown: false,
-        }}
+        options={{ title: 'Courses', headerTitle: 'All Courses', headerShown: false }}
       />
 
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, size, focused }) => (
-            <User color={color} size={size} strokeWidth={focused ? 2.5 : 2} />
-          ),
-          headerTitle: 'My Profile',
-          headerShown: false,
-        }}
+        options={{ title: 'Profile', headerTitle: 'My Profile', headerShown: false }}
       />
+
+      {/* Admin-only tab — takes its own place in the footer, shown only when the
+          logged-in user's role is `admin`. */}
+      {isAdmin && (
+        <Tab.Screen
+          name="Admin"
+          component={AdminPanelScreen}
+          options={{ title: 'Admin', headerTitle: 'Admin Panel', headerShown: false }}
+        />
+      )}
     </Tab.Navigator>
   );
 }

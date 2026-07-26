@@ -1,207 +1,110 @@
-import { OAuthProvider } from 'appwrite';
-import { clearAuthData, saveAuthData } from '../utils/storage';
-import { account, APPWRITE_CONFIG, databases, ID, Query } from './appwrite';
+import { apiRequest, loginRequest } from './api';
+import {
+  clearAuthData,
+  getAccessToken,
+  getRefreshToken,
+  saveAuthData,
+} from '../utils/storage';
+
+// Backend user_id is numeric; UI still keys off `$id` (carried over from Appwrite) so we
+// alias it here instead of touching every screen that reads course.$id / user.$id.
+function normalizeUser(user) {
+  return { ...user, $id: String(user.user_id) };
+}
 
 export const authService = {
-  // Register new student with email/password
+  // POST /api/auth/register — returns the created user but no token.
+  // We log in right after so the caller gets back a usable session, same as before.
   async register(email, password, name, phone) {
-    try {
-      const accountResponse = await account.create(
-        ID.unique(),
+    await apiRequest('/api/auth/register', {
+      method: 'POST',
+      body: {
+        name,
         email,
         password,
-        name
-      );
+        ...(phone ? { phone: Number(phone) } : {}),
+      },
+    });
 
-      const now = new Date().toISOString();
-      const userDoc = await databases.createDocument(
-        APPWRITE_CONFIG.databaseId,
-        APPWRITE_CONFIG.usersCollectionId,
-        ID.unique(),
-        {
-          email,
-          name,
-          phone: phone || '',
-          role: 'student',
-          createdAt: now,
-          updatedAt: now,
-        }
-      );
-
-      await account.createEmailPasswordSession(email, password);
-      const session = await account.get();
-      await saveAuthData(session.$id, userDoc);
-
-      return { user: userDoc, session };
-    } catch (error) {
-      console.error('Registration error:', error);
-      throw new Error(error.message || 'Registration failed');
-    }
+    return authService.login(email, password);
   },
 
-  // Login with email/password
+  // POST /api/auth/login (form-urlencoded, OAuth2) -> { access_token, refresh_token }
   async login(email, password) {
-    try {
-      try {
-        await account.deleteSession('current');
-      } catch (e) {
-        // Ignore
-      }
+    const { access_token, refresh_token } = await loginRequest(email, password);
+    const rawUser = await apiRequest('/api/auth/me', { token: access_token });
+    const user = normalizeUser(rawUser);
 
-      await account.createEmailPasswordSession(email, password);
-      const accountData = await account.get();
-
-      const userDocs = await databases.listDocuments(
-        APPWRITE_CONFIG.databaseId,
-        APPWRITE_CONFIG.usersCollectionId,
-        [Query.equal('email', email)]
-      );
-
-      if (userDocs.documents.length === 0) {
-        await account.deleteSession('current');
-        throw new Error('User not found in database');
-      }
-
-      const user = userDocs.documents[0];
-
-      if (user.role !== 'student') {
-        await account.deleteSession('current');
-        throw new Error('Only students can access this app');
-      }
-
-      await saveAuthData(accountData.$id, user);
-      return { user, session: accountData };
-    } catch (error) {
-      console.error('Login error:', error);
-      throw new Error(error.message || 'Login failed');
-    }
+    await saveAuthData(access_token, refresh_token, user);
+    return { user, accessToken: access_token };
   },
 
-  // Google Sign-In (OAuth)
+  // Not available on this backend yet — no Google OAuth endpoint.
   async loginWithGoogle() {
-    try {
-      // Delete existing session if any
-      try {
-        await account.deleteSession('current');
-      } catch (e) {
-        // Ignore
-      }
-
-      // Create OAuth2 session with Google
-      // This will open browser for Google authentication
-      await account.createOAuth2Session(
-        OAuthProvider.Google,
-        'elearn://oauth', // Success redirect
-        'elearn://oauth', // Failure redirect
-      );
-
-      // After redirect, get account info
-      const accountData = await account.get();
-
-      // Check if user exists in database
-      let userDocs = await databases.listDocuments(
-        APPWRITE_CONFIG.databaseId,
-        APPWRITE_CONFIG.usersCollectionId,
-        [Query.equal('email', accountData.email)]
-      );
-
-      let user;
-
-      if (userDocs.documents.length === 0) {
-        // Create new user document for Google sign-in
-        const now = new Date().toISOString();
-        const userDoc = await databases.createDocument(
-          APPWRITE_CONFIG.databaseId,
-          APPWRITE_CONFIG.usersCollectionId,
-          ID.unique(),
-          {
-            email: accountData.email,
-            name: accountData.name,
-            phone: '',
-            role: 'student',
-            createdAt: now,
-            updatedAt: now,
-          }
-        );
-        user = userDoc;
-      } else {
-        user = userDocs.documents[0];
-      }
-
-      if (user.role !== 'student') {
-        await account.deleteSession('current');
-        throw new Error('Only students can access this app');
-      }
-
-      await saveAuthData(accountData.$id, user);
-      return { user, session: accountData };
-    } catch (error) {
-      console.error('Google sign-in error:', error);
-      throw new Error(error.message || 'Google sign-in failed');
-    }
+    throw new Error('Google sign-in is not available on this backend yet');
   },
 
-  // Logout
+  // POST /api/auth/logout revokes the refresh token server-side. Best-effort: the local
+  // session is always cleared even if the network call fails (e.g. offline logout).
   async logout() {
     try {
-      await account.deleteSession('current');
-      await clearAuthData();
+      const refreshToken = await getRefreshToken();
+      if (refreshToken) {
+        await apiRequest('/api/auth/logout', {
+          method: 'POST',
+          body: { refresh_token: refreshToken },
+        });
+      }
     } catch (error) {
-      console.error('Logout error:', error);
+      // Ignore — logging out locally still needs to succeed.
+    } finally {
       await clearAuthData();
     }
   },
 
-  // Get current user
+  // GET /api/auth/me
   async getCurrentUser() {
     try {
-      const accountData = await account.get();
-
-      const userDocs = await databases.listDocuments(
-        APPWRITE_CONFIG.databaseId,
-        APPWRITE_CONFIG.usersCollectionId,
-        [Query.equal('email', accountData.email)]
-      );
-
-      if (userDocs.documents.length === 0) {
-        return null;
-      }
-
-      return userDocs.documents[0];
+      const token = await getAccessToken();
+      if (!token) return null;
+      const user = await apiRequest('/api/auth/me', { token });
+      return normalizeUser(user);
     } catch (error) {
-      console.error('Get current user error:', error);
       return null;
     }
   },
 
-  // Update profile
-  async updateProfile(userId, name, phone) {
-    try {
-      const updated = await databases.updateDocument(
-        APPWRITE_CONFIG.databaseId,
-        APPWRITE_CONFIG.usersCollectionId,
-        userId,
-        {
-          name,
-          phone: phone || '',
-          updatedAt: new Date().toISOString(),
-        }
-      );
+  // PUT /api/users/me — multipart/form-data so a profile photo can be uploaded directly.
+  // Only the provided fields are sent; omitted fields are left untouched server-side.
+  // `imageFile` is a react-native-image-picker asset ({ uri, type, fileName }).
+  async updateProfile({ name, phone, email, password, imageFile } = {}) {
+    const token = await getAccessToken();
 
-      return updated;
-    } catch (error) {
-      console.error('Update profile error:', error);
-      throw new Error(error.message || 'Update failed');
+    const form = new FormData();
+    if (name !== undefined) form.append('name', name);
+    if (email !== undefined) form.append('email', email);
+    if (password) form.append('password', password);
+    if (phone !== undefined && phone !== '') form.append('phone', String(Number(phone)));
+    if (imageFile) {
+      form.append('image_file', {
+        uri: imageFile.uri,
+        type: imageFile.type || 'image/jpeg',
+        name: imageFile.fileName || 'profile.jpg',
+      });
     }
+
+    await apiRequest('/api/users/me', { method: 'PUT', token, body: form });
+
+    // Re-fetch the canonical user so the cached copy matches GET /api/auth/me exactly,
+    // then persist it (refresh token is unchanged) so getAuthData() reflects the edit.
+    const user = normalizeUser(await apiRequest('/api/auth/me', { token }));
+    const refreshToken = await getRefreshToken();
+    await saveAuthData(token, refreshToken, user);
+    return user;
   },
 
-  // Check authentication status
   async checkAuth() {
-    try {
-      await account.get();
-      return true;
-    } catch (error) {
-      return false;
-    }
+    const user = await authService.getCurrentUser();
+    return !!user;
   },
 };

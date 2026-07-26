@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { Colors } from '@/constants/Colors';
+import { router } from '@/src/navigation/router';
 import { setOnboardingDone } from '@/utils/storage';
 
 const { width, height } = Dimensions.get('window');
@@ -44,13 +45,13 @@ export function OnboardingScreen() {
       setCurrentIndex(nextIndex);
     } else {
       await setOnboardingDone();
-      // router.replace('/(auth)/login');
+      router.replace('/(auth)/login');
     }
   };
 
   const handleSkip = async () => {
     await setOnboardingDone();
-    // router.replace('/(auth)/login');
+    router.replace('/(auth)/login');
   };
 
   const renderItem = ({ item, index }) => (

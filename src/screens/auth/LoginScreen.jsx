@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -9,7 +10,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Colors } from '@/constants/Colors';
@@ -33,7 +36,9 @@ export function LoginScreen() {
       await authService.login(email, password);
       router.replace('/(tabs)');
     } catch (error) {
-      Alert.alert('Login Failed', error.message);
+      const message = error.message || 'Login failed. Please try again.';
+      Alert.alert('Login Failed', message);
+      console.error('Login error:', error);
     } finally {
       setLoading(false);
     }
@@ -51,108 +56,209 @@ export function LoginScreen() {
     }
   };
 
+  const handleForgotPassword = () => {
+    Alert.alert(
+      'Reset Password',
+      'Please contact our support team to reset your password.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Get Help', onPress: () => router.push('/support') },
+      ]
+    );
+  };
+
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>Sign in to continue learning</Text>
-        </View>
-
-        <View style={styles.form}>
-          <Input
-            label="Email"
-            placeholder="Enter your email"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            icon="mail-outline"
-          />
-
-          <Input
-            label="Password"
-            placeholder="Enter your password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            icon="lock-closed-outline"
-          />
-
-          <Button
-            title="Sign In"
-            onPress={handleLogin}
-            loading={loading}
-            fullWidth
-          />
-
-          {/* Divider */}
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>OR</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          {/* Google Sign-In Button */}
-          <TouchableOpacity
-            style={styles.googleButton}
-            onPress={handleGoogleSignIn}
-            disabled={googleLoading}
-            activeOpacity={0.8}
+    <View style={styles.container}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          bounces={false}
+        >
+          {/* Branded hero */}
+          <LinearGradient
+            colors={['#009689', '#00766C', '#163B3C']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.hero}
           >
-            <Ionicons name="logo-google" size={20} />
-            <Text style={styles.googleButtonText}>
-              {googleLoading ? 'Signing in...' : 'Continue with Google'}
-            </Text>
-          </TouchableOpacity>
+            <SafeAreaView edges={['top']}>
+              <TouchableOpacity
+                style={styles.skipButton}
+                onPress={() => router.replace('/(tabs)')}
+                hitSlop={8}
+              >
+                <Text style={styles.skipText}>Skip</Text>
+                <Ionicons name="arrow-forward" size={15} color={Colors.white} />
+              </TouchableOpacity>
+            </SafeAreaView>
 
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>{"Don't have an account?"} </Text>
-            <Text
-              style={styles.link}
-              onPress={() => router.push('/(auth)/register')}
+            <View style={styles.heroContent}>
+              <View style={styles.logoCircle}>
+                <Image
+                  source={require('@/assets/images/essar_logo.png')}
+                  style={styles.logo}
+                  resizeMode="contain"
+                />
+              </View>
+              <Text style={styles.heroTitle}>Welcome Back</Text>
+              <Text style={styles.heroSubtitle}>
+                Sign in to continue your learning journey
+              </Text>
+            </View>
+          </LinearGradient>
+
+          {/* Form card */}
+          <View style={styles.card}>
+            <Input
+              label="Email"
+              placeholder="Enter your email"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              icon="mail-outline"
+            />
+
+            <Input
+              label="Password"
+              placeholder="Enter your password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              icon="lock-closed-outline"
+            />
+
+            <TouchableOpacity
+              style={styles.forgotRow}
+              onPress={handleForgotPassword}
+              hitSlop={6}
             >
-              Sign Up
-            </Text>
+              <Text style={styles.forgotText}>Forgot Password?</Text>
+            </TouchableOpacity>
+
+            <Button title="Sign In" onPress={handleLogin} loading={loading} fullWidth />
+
+            {/* Divider */}
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>OR</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* Google Sign-In */}
+            <TouchableOpacity
+              style={styles.googleButton}
+              onPress={handleGoogleSignIn}
+              disabled={googleLoading}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="logo-google" size={20} color="#EA4335" />
+              <Text style={styles.googleButtonText}>
+                {googleLoading ? 'Signing in...' : 'Continue with Google'}
+              </Text>
+            </TouchableOpacity>
+
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>{"Don't have an account?"} </Text>
+              <Text style={styles.link} onPress={() => router.push('/(auth)/register')}>
+                Sign Up
+              </Text>
+            </View>
           </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.primary,
   },
-  scrollContent: {
+  flex: {
+    flex: 1,
+  },
+  scroll: {
     flexGrow: 1,
-    padding: 24,
-    justifyContent: 'center',
+    backgroundColor: Colors.background,
   },
-  header: {
+  hero: {
+    paddingHorizontal: 24,
+    paddingBottom: 48,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+  },
+  skipButton: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 35,
+    alignSelf: 'flex-end',
+    gap: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    marginTop: 4,
+  },
+  skipText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.white,
+  },
+  heroContent: {
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  logoCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 28,
+    backgroundColor: Colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 6,
   },
   logo: {
-    fontSize: 64,
-    marginBottom: 16,
+    width: 64,
+    height: 64,
   },
-  title: {
-    fontSize: 30,
-    fontWeight: '700',
-    color: Colors.text,
-    marginBottom: 8,
+  heroTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: Colors.white,
+    marginBottom: 6,
   },
-  subtitle: {
+  heroSubtitle: {
     fontSize: 14,
-    color: Colors.textSecondary,
+    color: 'rgba(255,255,255,0.85)',
+    textAlign: 'center',
   },
-  form: {
-    gap: 5,
+  card: {
+    flex: 1,
+    backgroundColor: Colors.background,
+    marginTop: -24,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingHorizontal: 24,
+    paddingTop: 32,
+    paddingBottom: 32,
+  },
+  forgotRow: {
+    alignSelf: 'flex-end',
+    marginBottom: 20,
+    marginTop: 4,
+  },
+  forgotText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.primary,
   },
   divider: {
     flexDirection: 'row',
@@ -166,7 +272,7 @@ const styles = StyleSheet.create({
   },
   dividerText: {
     marginHorizontal: 16,
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.textLight,
     fontWeight: '600',
   },
@@ -189,7 +295,7 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 24,
+    marginTop: 28,
   },
   footerText: {
     fontSize: 14,
@@ -198,6 +304,6 @@ const styles = StyleSheet.create({
   link: {
     fontSize: 14,
     color: Colors.primary,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 });

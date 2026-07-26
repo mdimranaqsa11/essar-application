@@ -1,33 +1,42 @@
 import { useEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import { Colors } from '@/constants/Colors';
-import { getAuthData, isOnboardingDone } from '@/utils/storage';
+import { isOnboardingDone } from '@/utils/storage';
 
-export function SplashScreen() {
-  // useEffect(() => {
-  //   checkAuth();
-  // }, []);
+export function SplashScreen({ navigation }) {
+  useEffect(() => {
+    checkAuth();
+  }, []);
 
-  // const checkAuth = async () => {
-  //   setTimeout(async () => {
-  //     const authData = await getAuthData();
-  //     const onboardingDone = await isOnboardingDone();
+  const checkAuth = async () => {
+    setTimeout(async () => {
+      const onboardingDone = await isOnboardingDone();
 
-  //     if (authData) {
-  //       router.replace('/(tabs)');
-  //     } else if (onboardingDone) {
-  //       router.replace('/(auth)/login');
-  //     } else {
-  //       router.replace('/onboarding');
-  //     }
-  //   }, 2000);
-  // };
+      if (!onboardingDone) {
+        // First app open ever — show onboarding, which ends on Login (with a Skip option).
+        navigation.replace('Onboarding');
+      } else {
+        // Every other app open — go straight into the app. Guests can browse freely;
+        // login is only prompted when they try something that needs an account (enroll).
+        navigation.replace('MainTabs');
+      }
+    }, 2000);
+  };
 
   return (
     <View style={styles.container}>
       <View style={styles.logoContainer}>
+        <View style={styles.logoBadge}>
+          <Image
+            source={require('@/assets/images/essar_logo.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
+        </View>
         <Text style={styles.title}>Essar</Text>
-        <Text style={styles.tagline}>Esaar Global Institute</Text>
+        <Text style={styles.tagline}>
+          Esaar Global Institute of{'\n'}Medical & Aesthetic Sciences
+        </Text>
       </View>
     </View>
   );
@@ -43,9 +52,23 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: 'center',
   },
-  logo: {
-    fontSize: 80,
-    marginBottom: 16,
+  logoBadge: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: Colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  logoImage: {
+    width: 88,
+    height: 88,
   },
   title: {
     fontSize: 48,
@@ -57,5 +80,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.white,
     opacity: 0.9,
+    textAlign: 'center',
+    lineHeight: 22,
   },
 });

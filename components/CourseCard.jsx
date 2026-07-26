@@ -1,10 +1,40 @@
-import React from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useState } from "react";
+import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Colors } from "@/constants/Colors";
 import { router } from "../src/navigation/router";
+import { coursesService } from "../services/courses";
+import { getAuthData } from "../utils/storage";
 
-export const CourseCard = ({ course }) => {
+export const CourseCard = ({ course, isEnrolled = false, isAdmin = false }) => {
+  const [enrolling, setEnrolling] = useState(false);
+
   const handlePress = () => {
     router.push(`/course/${course.$id}`);
+  };
+
+  const handleEnroll = async () => {
+    const authData = await getAuthData();
+    if (!authData) {
+      Alert.alert(
+        "Login Required",
+        "Please login to enroll in this course",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Login", onPress: () => router.push("/(auth)/login") },
+        ]
+      );
+      return;
+    }
+
+    setEnrolling(true);
+    try {
+      await coursesService.enrollInCourse(authData.user.$id, course.$id);
+      Alert.alert("Success", "You are now enrolled in this course!");
+    } catch (error) {
+      Alert.alert("Enrollment Failed", error.message || "Please try again");
+    } finally {
+      setEnrolling(false);
+    }
   };
 
   const discountPercentage = course.originalPrice
@@ -15,7 +45,7 @@ export const CourseCard = ({ course }) => {
     <TouchableOpacity
       style={styles.container}
       onPress={handlePress}
-      activeOpacity={0.8}
+      activeOpacity={0.9}
     >
       <View style={styles.imageContainer}>
         <Image
@@ -23,10 +53,15 @@ export const CourseCard = ({ course }) => {
           style={styles.thumbnail}
           resizeMode="cover"
         />
-        {course.rating && (
+        {course.rating > 0 && (
           <View style={styles.ratingBadge}>
             <Text style={styles.ratingIcon}>★</Text>
             <Text style={styles.ratingText}>{course.rating.toFixed(1)}</Text>
+          </View>
+        )}
+        {discountPercentage > 0 && (
+          <View style={styles.discountBadge}>
+            <Text style={styles.discountBadgeText}>{discountPercentage}% OFF</Text>
           </View>
         )}
       </View>
@@ -36,16 +71,39 @@ export const CourseCard = ({ course }) => {
           {course.title}
         </Text>
 
-        <Text style={styles.author}>by {course.instructor || "Team Clinical Guruji"}</Text>
+        {course.instructor && (
+          <Text style={styles.author}>by {course.instructor}</Text>
+        )}
 
-        <View style={styles.priceRow}>
-          <Text style={styles.price}>₹{course.price}</Text>
-          {course.originalPrice && (
-            <>
+        <View style={styles.footerRow}>
+          <View style={styles.priceRow}>
+            <Text style={styles.price}>₹{course.price}</Text>
+            {course.originalPrice && (
               <Text style={styles.originalPrice}>₹{course.originalPrice}</Text>
-              <Text style={styles.discount}>{discountPercentage}% off</Text>
-            </>
-          )}
+            )}
+          </View>
+
+          {!isAdmin &&
+            (isEnrolled ? (
+              <TouchableOpacity
+                style={styles.continueButton}
+                onPress={handlePress}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.continueButtonText}>Continue Learning</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={styles.enrollButton}
+                onPress={handleEnroll}
+                disabled={enrolling}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.enrollButtonText}>
+                  {enrolling ? "Enrolling..." : "Enroll Now"}
+                </Text>
+              </TouchableOpacity>
+            ))}
         </View>
       </View>
     </TouchableOpacity>
@@ -54,25 +112,24 @@ export const CourseCard = ({ course }) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#FFFFFF",
-    marginBottom: 30,
+    backgroundColor: Colors.white,
+    marginBottom: 20,
+    borderRadius: 16,
     overflow: "hidden",
-    shadowColor: "#000",
-    shadowOpacity: 0.1
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
   },
   imageContainer: {
     width: "100%",
     height: 190,
     position: "relative",
-    borderRadius: 12,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "#D3D3D3",
   },
   thumbnail: {
     width: "100%",
     height: "100%",
-    borderRadius: 12,
   },
   ratingBadge: {
     position: "absolute",
@@ -95,40 +152,76 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#000000",
   },
+  discountBadge: {
+    position: "absolute",
+    top: 12,
+    left: 12,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
+  discountBadgeText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: Colors.white,
+  },
   content: {
-    paddingVertical: 12,
-    paddingHorizontal: 8
+    padding: 14,
   },
   title: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#0000",
+    color: Colors.text,
     marginBottom: 4,
     lineHeight: 20,
   },
   author: {
     fontSize: 12,
     color: "#666666",
-    marginBottom: 8,
+    marginBottom: 10,
+  },
+  footerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   priceRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    flexShrink: 1,
   },
   price: {
-    fontSize: 15,
+    fontSize: 17,
     fontWeight: "700",
-    color: "#000000",
+    color: Colors.text,
   },
   originalPrice: {
     fontSize: 13,
     color: "#999999",
     textDecorationLine: "line-through",
   },
-  discount: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#4CAF50",
+  enrollButton: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  enrollButtonText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: Colors.white,
+  },
+  continueButton: {
+    backgroundColor: "rgba(0, 150, 137, 0.1)",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  continueButtonText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: Colors.primary,
   },
 });

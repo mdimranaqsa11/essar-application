@@ -1,221 +1,197 @@
-import { APPWRITE_CONFIG, databases, ID, Query } from './appwrite';
+import { apiRequest } from './api';
+import { getAccessToken } from '../utils/storage';
+
+const PLACEHOLDER_THUMBNAIL = require('../assets/images/one.png');
+
+// Backend ids are numeric; UI still keys off `$id`/`categoryId` (carried over from Appwrite)
+// so we alias fields here instead of touching every screen that reads course.$id.
+function normalizeCourse(course) {
+  return {
+    ...course,
+    $id: String(course.course_id),
+    categoryId: course.category_id != null ? String(course.category_id) : null,
+    price: course.fee,
+    originalPrice: course.original_price ?? undefined,
+    badge: course.badge ?? undefined,
+    enrolledCount: course.students_count,
+    thumbnail: course.thumbnail ? { uri: course.thumbnail } : PLACEHOLDER_THUMBNAIL,
+  };
+}
+
+function nameFromUrl(url) {
+  if (!url) return null;
+  const clean = url.split('?')[0].split('#')[0];
+  const last = clean.substring(clean.lastIndexOf('/') + 1);
+  try {
+    return last ? decodeURIComponent(last) : null;
+  } catch {
+    return last || null;
+  }
+}
+
+function normalizeMaterial(material) {
+  const url = material.file_url || material.url;
+  return {
+    ...material,
+    $id: String(material.material_id ?? material.id),
+    url,
+    name: material.file_name || material.name || nameFromUrl(url) || 'Material',
+    size: material.file_size ?? material.size ?? null,
+  };
+}
+
+function normalizeTopic(topic) {
+  return {
+    ...topic,
+    $id: String(topic.curriculum_id),
+    courseId: String(topic.course_id),
+    title: topic.topic_name,
+    order: topic.topic_order,
+    type: 'document', // backend doesn't model lesson video/type yet
+    materials: Array.isArray(topic.materials) ? topic.materials.map(normalizeMaterial) : [],
+  };
+}
+
+function normalizeInstructor(instructor) {
+  return {
+    ...instructor,
+    $id: String(instructor.instructor_id),
+    image: instructor.image ? { uri: instructor.image } : null,
+  };
+}
+
+function normalizeEnrollment(enrollment) {
+  return {
+    ...enrollment,
+    $id: String(enrollment.enrollment_id),
+    studentId: String(enrollment.user_id),
+    courseId: String(enrollment.course_id),
+    course: enrollment.course ? normalizeCourse(enrollment.course) : undefined,
+  };
+}
 
 export const coursesService = {
-  // Get all published courses
+  // GET /api/courses
   async getAllCourses() {
     try {
-      const response = await databases.listDocuments(
-        APPWRITE_CONFIG.databaseId,
-        APPWRITE_CONFIG.coursesCollectionId,
-        [Query.equal('status', 'published'), Query.limit(100)]
-      );
-      return response.documents;
+      const courses = await apiRequest('/api/courses');
+      return courses.map(normalizeCourse);
     } catch (error) {
       console.error('Get courses error:', error);
       return [];
     }
   },
 
-  // Get course by ID
+  // GET /api/courses/{courseId}
   async getCourseById(courseId) {
     try {
-      const course = await databases.getDocument(
-        APPWRITE_CONFIG.databaseId,
-        APPWRITE_CONFIG.coursesCollectionId,
-        courseId
-      );
-      return course;
+      const course = await apiRequest(`/api/courses/${courseId}`);
+      return normalizeCourse(course);
     } catch (error) {
       console.error('Get course by ID error:', error);
       throw new Error('Course not found');
     }
   },
 
-  // Get course contents
+  // GET /api/courses/{courseId}/curriculum
   async getCourseContents(courseId) {
     try {
-      const response = await databases.listDocuments(
-        APPWRITE_CONFIG.databaseId,
-        APPWRITE_CONFIG.contentsCollectionId,
-        [
-          Query.equal('courseId', courseId),
-          Query.orderAsc('order'),
-          Query.limit(100)
-        ]
-      );
-      return response.documents;
+      const topics = await apiRequest(`/api/courses/${courseId}/curriculum`);
+      return topics.map(normalizeTopic);
     } catch (error) {
       console.error('Get contents error:', error);
       return [];
     }
   },
 
-  // Get all categories
+  // GET /api/courses/{courseId}/instructors
+  async getCourseInstructors(courseId) {
+    try {
+      const instructors = await apiRequest(`/api/courses/${courseId}/instructors`);
+      return instructors.map(normalizeInstructor);
+    } catch (error) {
+      console.error('Get course instructors error:', error);
+      return [];
+    }
+  },
+
+  // GET /api/categories
   async getCategories() {
     try {
-      const response = await databases.listDocuments(
-        APPWRITE_CONFIG.databaseId,
-        APPWRITE_CONFIG.categoriesCollectionId,
-        [Query.limit(50)]
-      );
-      return response.documents;
+      const categories = await apiRequest('/api/categories');
+      return categories.map((c) => ({ ...c, $id: String(c.category_id), name: c.category_name }));
     } catch (error) {
       console.error('Get categories error:', error);
       return [];
     }
   },
 
-  // Check if student enrolled
+  // No dedicated "is enrolled" endpoint — derive it from the user's own enrollment list.
   async isEnrolled(studentId, courseId) {
-    try {
-      const response = await databases.listDocuments(
-        APPWRITE_CONFIG.databaseId,
-        APPWRITE_CONFIG.enrollmentsCollectionId,
-        [
-          Query.equal('studentId', studentId),
-          Query.equal('courseId', courseId),
-        ]
-      );
-      return response.documents.length > 0;
-    } catch (error) {
-      console.error('Check enrollment error:', error);
-      return false;
-    }
+    const enrollments = await coursesService.getMyEnrollments(studentId);
+    return enrollments.some((e) => e.courseId === String(courseId));
   },
 
-  // Get student enrollments
+  // GET /api/enrollments/my (studentId param kept for call-site compatibility; the
+  // backend infers the user from the bearer token, so it's not sent explicitly)
   async getMyEnrollments(studentId) {
     try {
-      const response = await databases.listDocuments(
-        APPWRITE_CONFIG.databaseId,
-        APPWRITE_CONFIG.enrollmentsCollectionId,
-        [Query.equal('studentId', studentId), Query.limit(100)]
-      );
-      return response.documents;
+      const token = await getAccessToken();
+      if (!token) return [];
+      const enrollments = await apiRequest('/api/enrollments/my', { token });
+      return enrollments.map(normalizeEnrollment);
     } catch (error) {
       console.error('Get enrollments error:', error);
       return [];
     }
   },
 
-  // Manual enrollment (for testing - in production this happens after payment)
+  // POST /api/enrollments { course_id }
   async enrollInCourse(studentId, courseId) {
     try {
-      const now = new Date().toISOString();
-      const enrollment = await databases.createDocument(
-        APPWRITE_CONFIG.databaseId,
-        APPWRITE_CONFIG.enrollmentsCollectionId,
-        ID.unique(),
-        {
-          studentId,
-          courseId,
-          progress: 0,
-          enrolledAt: now,
-          createdAt: now,
-          updatedAt: now,
-        }
-      );
-      return enrollment;
+      const token = await getAccessToken();
+      const enrollment = await apiRequest('/api/enrollments', {
+        method: 'POST',
+        token,
+        body: { course_id: Number(courseId) },
+      });
+      return normalizeEnrollment(enrollment);
     } catch (error) {
       console.error('Enrollment error:', error);
       throw new Error(error.message || 'Enrollment failed');
     }
   },
 
-  // Update progress
-  async updateProgress(enrollmentId, progress) {
-    try {
-      await databases.updateDocument(
-        APPWRITE_CONFIG.databaseId,
-        APPWRITE_CONFIG.enrollmentsCollectionId,
-        enrollmentId,
-        {
-          progress,
-          updatedAt: new Date().toISOString(),
-        }
-      );
-    } catch (error) {
-      console.error('Update progress error:', error);
-    }
-  },
+  // Not available on this backend — enrollment has a status (Pending/Enrolled/Completed/
+  // Cancelled) set by admins, not a student-writable progress percentage.
+  async updateProgress(enrollmentId, progress) {},
 
-  // Get enrollment by student and course
   async getEnrollment(studentId, courseId) {
-    try {
-      const response = await databases.listDocuments(
-        APPWRITE_CONFIG.databaseId,
-        APPWRITE_CONFIG.enrollmentsCollectionId,
-        [
-          Query.equal('studentId', studentId),
-          Query.equal('courseId', courseId),
-        ]
-      );
-
-      if (response.documents.length > 0) {
-        return response.documents[0];
-      }
-      return null;
-    } catch (error) {
-      console.error('Get enrollment error:', error);
-      return null;
-    }
+    const enrollments = await coursesService.getMyEnrollments(studentId);
+    return enrollments.find((e) => e.courseId === String(courseId)) || null;
   },
 
-  // Submit support ticket
+  // Not available on this backend yet — no support-ticket endpoint.
   async submitSupport(studentId, subject, message) {
-    try {
-      const now = new Date().toISOString();
-      await databases.createDocument(
-        APPWRITE_CONFIG.databaseId,
-        APPWRITE_CONFIG.supportCollectionId,
-        ID.unique(),
-        {
-          studentId,
-          subject,
-          message,
-          status: 'open',
-          createdAt: now,
-          updatedAt: now,
-        }
-      );
-    } catch (error) {
-      console.error('Submit support error:', error);
-      throw new Error(error.message || 'Failed to submit ticket');
-    }
+    throw new Error('Support ticket submission is not available on this backend yet');
   },
 
-  // Search courses
+  // GET /api/courses?search={query}
   async searchCourses(query) {
     try {
-      const response = await databases.listDocuments(
-        APPWRITE_CONFIG.databaseId,
-        APPWRITE_CONFIG.coursesCollectionId,
-        [
-          Query.equal('status', 'published'),
-          Query.search('title', query),
-          Query.limit(50)
-        ]
-      );
-      return response.documents;
+      const courses = await apiRequest('/api/courses', { query: { search: query } });
+      return courses.map(normalizeCourse);
     } catch (error) {
       console.error('Search courses error:', error);
       return [];
     }
   },
 
-  // Get courses by category
+  // GET /api/courses?category_id={categoryId}
   async getCoursesByCategory(categoryId) {
     try {
-      const response = await databases.listDocuments(
-        APPWRITE_CONFIG.databaseId,
-        APPWRITE_CONFIG.coursesCollectionId,
-        [
-          Query.equal('status', 'published'),
-          Query.equal('categoryId', categoryId),
-          Query.limit(100)
-        ]
-      );
-      return response.documents;
+      const courses = await apiRequest('/api/courses', { query: { category_id: categoryId } });
+      return courses.map(normalizeCourse);
     } catch (error) {
       console.error('Get courses by category error:', error);
       return [];

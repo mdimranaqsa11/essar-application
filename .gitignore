@@ -29,7 +29,7 @@ ios/DerivedData/
 
 # Metro
 .metro-health-check*
-
+.env
 # debug
 npm-debug.*
 yarn-debug.*

@@ -1,14 +1,17 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const KEYS = {
-  SESSION_ID: '@session_id',
+  ACCESS_TOKEN: '@access_token',
+  REFRESH_TOKEN: '@refresh_token',
   USER_DATA: '@user_data',
   ONBOARDING_DONE: '@onboarding_done',
+  BOOKMARKED_COURSES: '@bookmarked_courses',
 };
 
-export const saveAuthData = async (sessionId, user) => {
+export const saveAuthData = async (accessToken, refreshToken, user) => {
   try {
-    await AsyncStorage.setItem(KEYS.SESSION_ID, sessionId);
+    await AsyncStorage.setItem(KEYS.ACCESS_TOKEN, accessToken);
+    await AsyncStorage.setItem(KEYS.REFRESH_TOKEN, refreshToken || '');
     await AsyncStorage.setItem(KEYS.USER_DATA, JSON.stringify(user));
   } catch (error) {
     console.error('Save auth data error:', error);
@@ -17,12 +20,14 @@ export const saveAuthData = async (sessionId, user) => {
 
 export const getAuthData = async () => {
   try {
-    const sessionId = await AsyncStorage.getItem(KEYS.SESSION_ID);
+    const accessToken = await AsyncStorage.getItem(KEYS.ACCESS_TOKEN);
+    const refreshToken = await AsyncStorage.getItem(KEYS.REFRESH_TOKEN);
     const userData = await AsyncStorage.getItem(KEYS.USER_DATA);
 
-    if (sessionId && userData) {
+    if (accessToken && userData) {
       return {
-        sessionId,
+        accessToken,
+        refreshToken,
         user: JSON.parse(userData),
       };
     }
@@ -33,9 +38,42 @@ export const getAuthData = async () => {
   }
 };
 
+// Quick token getter for attaching `Authorization: Bearer <token>` without parsing user data
+export const getAccessToken = async () => {
+  try {
+    return await AsyncStorage.getItem(KEYS.ACCESS_TOKEN);
+  } catch (error) {
+    return null;
+  }
+};
+
+export const getRefreshToken = async () => {
+  try {
+    return await AsyncStorage.getItem(KEYS.REFRESH_TOKEN);
+  } catch (error) {
+    return null;
+  }
+};
+
+// Updates just the token pair (e.g. after a silent refresh) without touching the cached user.
+export const saveTokens = async (accessToken, refreshToken) => {
+  try {
+    await AsyncStorage.setItem(KEYS.ACCESS_TOKEN, accessToken);
+    if (refreshToken) {
+      await AsyncStorage.setItem(KEYS.REFRESH_TOKEN, refreshToken);
+    }
+  } catch (error) {
+    console.error('Save tokens error:', error);
+  }
+};
+
 export const clearAuthData = async () => {
   try {
-    await AsyncStorage.multiRemove([KEYS.SESSION_ID, KEYS.USER_DATA]);
+    await AsyncStorage.multiRemove([
+      KEYS.ACCESS_TOKEN,
+      KEYS.REFRESH_TOKEN,
+      KEYS.USER_DATA,
+    ]);
   } catch (error) {
     console.error('Clear auth data error:', error);
   }
@@ -55,5 +93,29 @@ export const isOnboardingDone = async () => {
     return value === 'true';
   } catch (error) {
     return false;
+  }
+};
+
+// Device-local "saved for later" list — not synced to any backend.
+export const getBookmarkedCourseIds = async () => {
+  try {
+    const value = await AsyncStorage.getItem(KEYS.BOOKMARKED_COURSES);
+    return value ? JSON.parse(value) : [];
+  } catch (error) {
+    return [];
+  }
+};
+
+export const toggleBookmarkedCourse = async (courseId) => {
+  try {
+    const ids = await getBookmarkedCourseIds();
+    const next = ids.includes(courseId)
+      ? ids.filter((id) => id !== courseId)
+      : [...ids, courseId];
+    await AsyncStorage.setItem(KEYS.BOOKMARKED_COURSES, JSON.stringify(next));
+    return next;
+  } catch (error) {
+    console.error('Toggle bookmark error:', error);
+    return await getBookmarkedCourseIds();
   }
 };

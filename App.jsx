@@ -2,6 +2,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { ToastProvider } from '@/components/ui/Toast';
 import { navigationRef } from '@/src/navigation/navigationRef';
 import { RootNavigator } from '@/src/navigation/RootNavigator';
 
@@ -10,9 +11,11 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <StatusBar barStyle="dark-content" />
-        <NavigationContainer ref={navigationRef}>
-          <RootNavigator />
-        </NavigationContainer>
+        <ToastProvider>
+          <NavigationContainer ref={navigationRef}>
+            <RootNavigator />
+          </NavigationContainer>
+        </ToastProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
