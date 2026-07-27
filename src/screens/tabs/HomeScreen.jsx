@@ -19,7 +19,6 @@ import TrainingHighlights from '@/components/TrainingHighlights';
 import WhoWeAre from '@/components/WhoWeAre';
 import { Loader } from '@/components/ui/Loader';
 import { Colors } from '@/constants/Colors';
-import { DUMMY_COURSES } from '@/constants/Dummy';
 import { router } from '@/src/navigation/router';
 import { coursesService } from '@/services/courses';
 import { getAuthData } from '@/utils/storage';
@@ -54,16 +53,10 @@ export function HomeScreen() {
       }
 
       const fetchedCourses = await coursesService.getAllCourses();
-
-      if (fetchedCourses.length === 0) {
-        console.log('Using dummy courses');
-        setCourses(DUMMY_COURSES);
-      } else {
-        setCourses(fetchedCourses);
-      }
+      setCourses(fetchedCourses);
     } catch (error) {
       console.error('Load data error:', error);
-      setCourses(DUMMY_COURSES);
+      setCourses([]);
     } finally {
       setLoading(false);
       setRefreshing(false);

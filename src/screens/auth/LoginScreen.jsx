@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -14,58 +13,66 @@ import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui/Button';
+// import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { Input } from '@/components/ui/Input';
 import { Colors } from '@/constants/Colors';
 import { router } from '@/src/navigation/router';
 import { authService } from '@/services/auth';
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errors, setErrors] = useState({});
+  const [formError, setFormError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
+  // const [forgotModalVisible, setForgotModalVisible] = useState(false);
+
+  const clearFieldError = (field) => {
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+  };
+
+  const validate = () => {
+    const nextErrors = {};
+
+    if (!email.trim()) {
+      nextErrors.email = 'Email is required';
+    } else if (!EMAIL_REGEX.test(email.trim())) {
+      nextErrors.email = 'Enter a valid email address';
+    }
+
+    if (!password) {
+      nextErrors.password = 'Password is required';
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill all fields');
+    setFormError('');
+    if (!validate()) {
       return;
     }
 
     setLoading(true);
     try {
-      await authService.login(email, password);
+      await authService.login(email.trim(), password);
       router.replace('/(tabs)');
     } catch (error) {
-      const message = error.message || 'Login failed. Please try again.';
-      Alert.alert('Login Failed', message);
+      setFormError(error.message || 'Login failed. Please try again.');
       console.error('Login error:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    setGoogleLoading(true);
-    try {
-      await authService.loginWithGoogle();
-      router.replace('/(tabs)');
-    } catch (error) {
-      Alert.alert('Google Sign-In Failed', error.message);
-    } finally {
-      setGoogleLoading(false);
-    }
-  };
-
-  const handleForgotPassword = () => {
-    Alert.alert(
-      'Reset Password',
-      'Please contact our support team to reset your password.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Get Help', onPress: () => router.push('/support') },
-      ]
-    );
-  };
+  // const handleForgotPassword = () => {
+  //   setForgotModalVisible(true);
+  // };
 
   return (
     <View style={styles.container}>
@@ -118,49 +125,44 @@ export function LoginScreen() {
               label="Email"
               placeholder="Enter your email"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => {
+                setEmail(text);
+                clearFieldError('email');
+              }}
               keyboardType="email-address"
               icon="mail-outline"
+              error={errors.email}
             />
 
             <Input
               label="Password"
               placeholder="Enter your password"
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(text) => {
+                setPassword(text);
+                clearFieldError('password');
+              }}
               secureTextEntry
               icon="lock-closed-outline"
+              error={errors.password}
             />
 
-            <TouchableOpacity
+            {/* <TouchableOpacity
               style={styles.forgotRow}
               onPress={handleForgotPassword}
               hitSlop={6}
             >
               <Text style={styles.forgotText}>Forgot Password?</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
+
+            {!!formError && (
+              <View style={styles.formErrorBanner}>
+                <Ionicons name="alert-circle" size={16} color={Colors.error} />
+                <Text style={styles.formErrorText}>{formError}</Text>
+              </View>
+            )}
 
             <Button title="Sign In" onPress={handleLogin} loading={loading} fullWidth />
-
-            {/* Divider */}
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>OR</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            {/* Google Sign-In */}
-            <TouchableOpacity
-              style={styles.googleButton}
-              onPress={handleGoogleSignIn}
-              disabled={googleLoading}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="logo-google" size={20} color="#EA4335" />
-              <Text style={styles.googleButtonText}>
-                {googleLoading ? 'Signing in...' : 'Continue with Google'}
-              </Text>
-            </TouchableOpacity>
 
             <View style={styles.footer}>
               <Text style={styles.footerText}>{"Don't have an account?"} </Text>
@@ -171,6 +173,20 @@ export function LoginScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* <ConfirmModal
+        visible={forgotModalVisible}
+        icon="key-outline"
+        title="Reset Password"
+        message="Please contact our support team to reset your password."
+        cancelText="Cancel"
+        confirmText="Get Help"
+        onCancel={() => setForgotModalVisible(false)}
+        onConfirm={() => {
+          setForgotModalVisible(false);
+          router.push('/support');
+        }}
+      /> */}
     </View>
   );
 }
@@ -260,37 +276,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.primary,
   },
-  divider: {
+  formErrorBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 24,
+    gap: 8,
+    backgroundColor: 'rgba(244, 67, 54, 0.1)',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 16,
   },
-  dividerLine: {
+  formErrorText: {
     flex: 1,
-    height: 1,
-    backgroundColor: Colors.border,
-  },
-  dividerText: {
-    marginHorizontal: 16,
     fontSize: 13,
-    color: Colors.textLight,
     fontWeight: '600',
-  },
-  googleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 52,
-    backgroundColor: Colors.white,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    gap: 12,
-  },
-  googleButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.text,
+    color: Colors.error,
   },
   footer: {
     flexDirection: 'row',

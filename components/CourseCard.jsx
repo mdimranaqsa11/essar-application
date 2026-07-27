@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { useToast } from "@/components/ui/Toast";
 import { Colors } from "@/constants/Colors";
 import { router } from "../src/navigation/router";
 import { coursesService } from "../services/courses";
@@ -7,6 +9,8 @@ import { getAuthData } from "../utils/storage";
 
 export const CourseCard = ({ course, isEnrolled = false, isAdmin = false }) => {
   const [enrolling, setEnrolling] = useState(false);
+  const [loginPromptVisible, setLoginPromptVisible] = useState(false);
+  const showToast = useToast();
 
   const handlePress = () => {
     router.push(`/course/${course.$id}`);
@@ -15,23 +19,16 @@ export const CourseCard = ({ course, isEnrolled = false, isAdmin = false }) => {
   const handleEnroll = async () => {
     const authData = await getAuthData();
     if (!authData) {
-      Alert.alert(
-        "Login Required",
-        "Please login to enroll in this course",
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Login", onPress: () => router.push("/(auth)/login") },
-        ]
-      );
+      setLoginPromptVisible(true);
       return;
     }
 
     setEnrolling(true);
     try {
       await coursesService.enrollInCourse(authData.user.$id, course.$id);
-      Alert.alert("Success", "You are now enrolled in this course!");
+      showToast("You are now enrolled in this course!", "success");
     } catch (error) {
-      Alert.alert("Enrollment Failed", error.message || "Please try again");
+      showToast(error.message || "Enrollment failed. Please try again", "error");
     } finally {
       setEnrolling(false);
     }
@@ -42,6 +39,7 @@ export const CourseCard = ({ course, isEnrolled = false, isAdmin = false }) => {
     : 0;
 
   return (
+    <>
     <TouchableOpacity
       style={styles.container}
       onPress={handlePress}
@@ -107,6 +105,20 @@ export const CourseCard = ({ course, isEnrolled = false, isAdmin = false }) => {
         </View>
       </View>
     </TouchableOpacity>
+    <ConfirmModal
+      visible={loginPromptVisible}
+      icon="log-in-outline"
+      title="Login Required"
+      message="Please login to enroll in this course"
+      cancelText="Cancel"
+      confirmText="Login"
+      onCancel={() => setLoginPromptVisible(false)}
+      onConfirm={() => {
+        setLoginPromptVisible(false);
+        router.push("/(auth)/login");
+      }}
+    />
+    </>
   );
 };
 

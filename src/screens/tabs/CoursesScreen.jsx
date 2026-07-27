@@ -15,7 +15,6 @@ import { MenuButton, SideMenu, useSideMenu } from '@/components/SideMenu';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Loader } from '@/components/ui/Loader';
 import { Colors } from '@/constants/Colors';
-import { DUMMY_COURSES } from '@/constants/Dummy';
 import { router } from '@/src/navigation/router';
 import { coursesService } from '@/services/courses';
 import { getAuthData } from '@/utils/storage';
@@ -47,12 +46,7 @@ export function CoursesScreen() {
         coursesService.getCategories(),
       ]);
 
-      if (fetchedCourses.length === 0) {
-        console.log('No courses from API, using dummy data');
-        setCourses(DUMMY_COURSES);
-      } else {
-        setCourses(fetchedCourses);
-      }
+      setCourses(fetchedCourses);
       setCategories(fetchedCategories);
 
       const authData = await getAuthData();
@@ -63,7 +57,7 @@ export function CoursesScreen() {
       }
     } catch (error) {
       console.error('Load data error:', error);
-      setCourses(DUMMY_COURSES);
+      setCourses([]);
     } finally {
       setLoading(false);
       setRefreshing(false);

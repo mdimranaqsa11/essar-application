@@ -1,74 +1,82 @@
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { useToast } from '@/components/ui/Toast';
+import { Colors } from '@/constants/Colors';
+import { authService } from '@/services/auth';
+import { router } from '@/src/navigation/router';
 import { useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Colors } from '@/constants/Colors';
-import { router } from '@/src/navigation/router';
-import { authService } from '@/services/auth';
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function RegisterScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [errors, setErrors] = useState({});
+  const [formError, setFormError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
+  const showToast = useToast();
+
+  const clearFieldError = (field) => {
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+  };
+
+  const validate = () => {
+    const nextErrors = {};
+
+    if (!name.trim()) {
+      nextErrors.name = 'Full name is required';
+    }
+
+    if (!email.trim()) {
+      nextErrors.email = 'Email is required';
+    } else if (!EMAIL_REGEX.test(email.trim())) {
+      nextErrors.email = 'Enter a valid email address';
+    }
+
+    if (!password) {
+      nextErrors.password = 'Password is required';
+    } else if (password.length < 8) {
+      nextErrors.password = 'Password must be at least 8 characters';
+    }
+
+    if (!confirmPassword) {
+      nextErrors.confirmPassword = 'Please confirm your password';
+    } else if (confirmPassword !== password) {
+      nextErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
 
   const handleRegister = async () => {
-    if (!name || !email || !password) {
-      Alert.alert('Error', 'Please fill all required fields');
-      return;
-    }
-
-    if (password.length < 8) {
-      Alert.alert('Error', 'Password must be at least 8 characters');
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      Alert.alert('Error', 'Please enter a valid email address');
+    setFormError('');
+    if (!validate()) {
       return;
     }
 
     setLoading(true);
     try {
-      await authService.register(email, password, name);
-      Alert.alert(
-        'Success',
-        'Account created successfully!',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.replace('/(tabs)'),
-          },
-        ]
-      );
-    } catch (error) {
-      Alert.alert('Registration Failed', error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleSignUp = async () => {
-    setGoogleLoading(true);
-    try {
-      await authService.loginWithGoogle();
+      await authService.register(email.trim(), password, name.trim());
+      showToast('Account created successfully!', 'success');
       router.replace('/(tabs)');
     } catch (error) {
-      Alert.alert('Google Sign-Up Failed', error.message);
+      setFormError(error.message || 'Registration failed. Please try again.');
     } finally {
-      setGoogleLoading(false);
+      setLoading(false);
     }
   };
 
@@ -92,27 +100,59 @@ export function RegisterScreen() {
             label="Full Name *"
             placeholder="Enter your full name"
             value={name}
-            onChangeText={setName}
+            onChangeText={(text) => {
+              setName(text);
+              clearFieldError('name');
+            }}
             icon="person-outline"
+            error={errors.name}
           />
 
           <Input
             label="Email *"
             placeholder="Enter your email"
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(text) => {
+              setEmail(text);
+              clearFieldError('email');
+            }}
             keyboardType="email-address"
             icon="mail-outline"
+            error={errors.email}
           />
 
           <Input
             label="Password *"
-            placeholder="Create a password (min 8 characters)"
+            placeholder="Create a password (min 8)"
             value={password}
-            onChangeText={setPassword}
+            onChangeText={(text) => {
+              setPassword(text);
+              clearFieldError('password');
+            }}
             secureTextEntry
             icon="lock-closed-outline"
+            error={errors.password}
           />
+
+          <Input
+            label="Confirm Password *"
+            placeholder="Re-enter your password"
+            value={confirmPassword}
+            onChangeText={(text) => {
+              setConfirmPassword(text);
+              clearFieldError('confirmPassword');
+            }}
+            secureTextEntry
+            icon="lock-closed-outline"
+            error={errors.confirmPassword}
+          />
+
+          {!!formError && (
+            <View style={styles.formErrorBanner}>
+              <Ionicons name="alert-circle" size={16} color={Colors.error} />
+              <Text style={styles.formErrorText}>{formError}</Text>
+            </View>
+          )}
 
           <Button
             title="Sign Up"
@@ -120,26 +160,6 @@ export function RegisterScreen() {
             loading={loading}
             fullWidth
           />
-
-          {/* Divider */}
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>OR</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          {/* Google Sign-Up Button (Bottom) */}
-          <TouchableOpacity
-            style={styles.googleButton}
-            onPress={handleGoogleSignUp}
-            disabled={googleLoading}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="logo-google" size={20} />
-            <Text style={styles.googleButtonText}>
-              {googleLoading ? 'Signing up...' : 'Sign up with Google'}
-            </Text>
-          </TouchableOpacity>
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>Already have an account? </Text>
@@ -187,38 +207,21 @@ const styles = StyleSheet.create({
   form: {
     width: '100%',
   },
-  googleButton: {
+  formErrorBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    height: 52,
-    backgroundColor: Colors.white,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    gap: 12,
+    gap: 8,
+    backgroundColor: 'rgba(244, 67, 54, 0.1)',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     marginBottom: 16,
   },
-  googleButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.text,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 24,
-  },
-  dividerLine: {
+  formErrorText: {
     flex: 1,
-    height: 1,
-    backgroundColor: Colors.border,
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    fontSize: 14,
-    color: Colors.textLight,
+    fontSize: 13,
     fontWeight: '600',
+    color: Colors.error,
   },
   footer: {
     flexDirection: 'row',

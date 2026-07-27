@@ -1,7 +1,6 @@
 import { useRoute } from '@react-navigation/native';
 import { useEffect, useState } from 'react';
 import {
-  Alert,
   Image,
   Linking,
   ScrollView,
@@ -13,12 +12,10 @@ import {
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { Loader } from '@/components/ui/Loader';
+import { useToast } from '@/components/ui/Toast';
 import { Colors } from '@/constants/Colors';
-import {
-  getDummyCourseContents,
-  getDummyCourseDetails,
-} from '@/constants/Dummy';
 import { router } from '@/src/navigation/router';
 import { coursesService } from '@/services/courses';
 import { deriveCourseType } from '@/utils/courseType';
@@ -40,6 +37,8 @@ export function CourseDetailsScreen() {
   const [bookmarked, setBookmarked] = useState(false);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
+  const [loginPromptVisible, setLoginPromptVisible] = useState(false);
+  const showToast = useToast();
 
   useEffect(() => {
     loadCourseDetails();
@@ -67,18 +66,7 @@ export function CourseDetailsScreen() {
       setContents(courseContents);
       setInstructors(courseInstructors);
     } catch (error) {
-      console.log("Backend failed, using dummy data");
-
-      // Fallback to dummy data
-      const dummyCourse = getDummyCourseDetails(id);
-      const dummyContents = getDummyCourseContents(id);
-
-      if (dummyCourse) {
-        setCourse(dummyCourse);
-        setContents(dummyContents);
-      } else {
-        Alert.alert("Error", "Course not found");
-      }
+      console.error('Load course details error:', error);
     } finally {
       setLoading(false);
     }
@@ -87,14 +75,7 @@ export function CourseDetailsScreen() {
   const handleEnroll = async () => {
     const authData = await getAuthData();
     if (!authData) {
-      Alert.alert(
-        "Login Required",
-        "Please login to enroll in this course",
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Login", onPress: () => router.push("/(auth)/login") },
-        ]
-      );
+      setLoginPromptVisible(true);
       return;
     }
 
@@ -102,9 +83,9 @@ export function CourseDetailsScreen() {
     try {
       await coursesService.enrollInCourse(authData.user.$id, id);
       setIsEnrolled(true);
-      Alert.alert("Success", "You are now enrolled in this course!");
+      showToast("You are now enrolled in this course!", "success");
     } catch (error) {
-      Alert.alert("Enrollment Failed", error.message || "Please try again");
+      showToast(error.message || "Enrollment failed. Please try again", "error");
     } finally {
       setEnrolling(false);
     }
@@ -434,6 +415,20 @@ export function CourseDetailsScreen() {
           </View>
         )}
       </View>
+
+      <ConfirmModal
+        visible={loginPromptVisible}
+        icon="log-in-outline"
+        title="Login Required"
+        message="Please login to enroll in this course"
+        cancelText="Cancel"
+        confirmText="Login"
+        onCancel={() => setLoginPromptVisible(false)}
+        onConfirm={() => {
+          setLoginPromptVisible(false);
+          router.push("/(auth)/login");
+        }}
+      />
     </SafeAreaView>
   );
 }

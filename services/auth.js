@@ -39,11 +39,6 @@ export const authService = {
     return { user, accessToken: access_token };
   },
 
-  // Not available on this backend yet — no Google OAuth endpoint.
-  async loginWithGoogle() {
-    throw new Error('Google sign-in is not available on this backend yet');
-  },
-
   // POST /api/auth/logout revokes the refresh token server-side. Best-effort: the local
   // session is always cleared even if the network call fails (e.g. offline logout).
   async logout() {
