@@ -1,3 +1,4 @@
+import { DateField } from '@/components/admin/DateField';
 import { InstructorPickerModal } from '@/components/admin/InstructorPickerModal';
 import { SelectField } from '@/components/admin/SelectField';
 import { PhotoPickerModal } from '@/components/ui/PhotoPickerModal';
@@ -594,18 +595,12 @@ export function AdminCourseFormScreen() {
               />
             </View>
 
-            <Text style={styles.fieldLabel}>Start Date</Text>
-            <View style={styles.inputRow}>
-              <Ionicons name="calendar-outline" size={18} color={Colors.textLight} />
-              <TextInput
-                style={styles.input}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor={Colors.textLight}
-                value={startDate}
-                onChangeText={setStartDate}
-                autoCapitalize="none"
-              />
-            </View>
+            <DateField
+              label="Start Date"
+              value={startDate}
+              onChange={setStartDate}
+              labelStyle={styles.fieldLabel}
+            />
 
             <Text style={styles.fieldLabel}>Certificate Name</Text>
             <View style={styles.inputRow}>

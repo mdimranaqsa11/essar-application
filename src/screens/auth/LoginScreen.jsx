@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   logoCircle: {
     width: 96,
     height: 96,
-    borderRadius: 28,
+    borderRadius: 48,
     backgroundColor: Colors.white,
     justifyContent: 'center',
     alignItems: 'center',
@@ -242,8 +242,8 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   logo: {
-    width: 64,
-    height: 64,
+    width: 96,
+    height: 96,
   },
   heroTitle: {
     fontSize: 28,

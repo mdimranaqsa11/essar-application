@@ -88,7 +88,7 @@ export function HomeScreen() {
             style={styles.headerLogo}
             resizeMode="contain"
           />
-          <Text style={styles.headerBrand}>Essar</Text>
+          <Text style={styles.headerBrand}>I.Esaar</Text>
         </View>
 
         <View style={[styles.topHeaderSide, styles.topHeaderRight]}>

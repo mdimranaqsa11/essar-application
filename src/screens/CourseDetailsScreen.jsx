@@ -19,11 +19,8 @@ import { Colors } from '@/constants/Colors';
 import { router } from '@/src/navigation/router';
 import { coursesService } from '@/services/courses';
 import { deriveCourseType } from '@/utils/courseType';
-import {
-  getAuthData,
-  getBookmarkedCourseIds,
-  toggleBookmarkedCourse,
-} from '@/utils/storage';
+import { getAuthData } from '@/utils/storage';
+// import { getBookmarkedCourseIds, toggleBookmarkedCourse } from '@/utils/storage';
 
 const LEARN_ICONS = ['people-outline', 'construct-outline', 'ribbon-outline', 'trending-up-outline'];
 
@@ -34,7 +31,7 @@ export function CourseDetailsScreen() {
   const [instructors, setInstructors] = useState([]);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [bookmarked, setBookmarked] = useState(false);
+  // const [bookmarked, setBookmarked] = useState(false);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
   const [loginPromptVisible, setLoginPromptVisible] = useState(false);
@@ -42,7 +39,7 @@ export function CourseDetailsScreen() {
 
   useEffect(() => {
     loadCourseDetails();
-    getBookmarkedCourseIds().then((ids) => setBookmarked(ids.includes(id)));
+    // getBookmarkedCourseIds().then((ids) => setBookmarked(ids.includes(id)));
   }, [id]);
 
   const loadCourseDetails = async () => {
@@ -97,10 +94,10 @@ export function CourseDetailsScreen() {
     }
   };
 
-  const handleBookmark = async () => {
-    const next = await toggleBookmarkedCourse(id);
-    setBookmarked(next.includes(id));
-  };
+  // const handleBookmark = async () => {
+  //   const next = await toggleBookmarkedCourse(id);
+  //   setBookmarked(next.includes(id));
+  // };
 
   const handleShare = async () => {
     try {
@@ -154,13 +151,13 @@ export function CourseDetailsScreen() {
             <TouchableOpacity style={[styles.iconCircle, styles.iconCircleLight]} onPress={handleShare}>
               <Ionicons name="share-social-outline" size={20} color={Colors.text} />
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.iconCircle, styles.iconCircleLight]} onPress={handleBookmark}>
+            {/* <TouchableOpacity style={[styles.iconCircle, styles.iconCircleLight]} onPress={handleBookmark}>
               <Ionicons
                 name={bookmarked ? 'heart' : 'heart-outline'}
                 size={20}
                 color={bookmarked ? '#e11d48' : Colors.text}
               />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
         </View>
 

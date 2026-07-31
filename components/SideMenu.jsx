@@ -118,7 +118,7 @@ export function SideMenu({ visible, slideAnim, close }) {
                   resizeMode="contain"
                 />
                 <View>
-                  <Text style={styles.menuBrandTitle}>Essar</Text>
+                  <Text style={styles.menuBrandTitle}>I.Esaar</Text>
                   <Text style={styles.menuBrandSubtitle}>Esaar Global Institute</Text>
                 </View>
               </View>

@@ -48,3 +48,53 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+## Android release signing
+
+Release keystore generated on 31 Jul 2026 for signing production builds.
+
+| Item | Value |
+| --- | --- |
+| Keystore file | `android/app/essar-release-key.jks` |
+| Key alias | `essar-key-alias` |
+| Store password | `123456` |
+| Key password | `123456` |
+| Keystore type | PKCS12 (RSA 2048) |
+| Valid until | 16 Dec 2053 |
+| SHA-1 | `E0:A9:65:5D:90:3B:28:90:EC:03:2D:49:C6:6E:6A:A6:26:89:4B:6E` |
+| SHA-256 | `89:7F:22:29:24:AB:B8:20:5D:7B:2A:1E:F4:59:A4:A5:02:67:D1:BF:5B:4B:36:46:54:03:6C:6B:A1:39:11:FD` |
+
+> **Back up `essar-release-key.jks`.** It is git-ignored (`*.jks`). Google Play ties
+> the app listing to this key — if it is lost, you can never ship an update to
+> `com.essarapplication` again and would have to publish under a new package name.
+
+The credentials are read from `android/gradle.properties` (`ESSAR_UPLOAD_*`) by the
+`release` signing config in `android/app/build.gradle`.
+
+### Regenerating the keystore
+
+```bash
+cd android/app
+keytool -genkeypair -v -storetype PKCS12 \
+  -keystore essar-release-key.jks \
+  -alias essar-key-alias \
+  -keyalg RSA -keysize 2048 -validity 10000 \
+  -storepass 123456 -keypass 123456 \
+  -dname "CN=I.Esaar, OU=Mobile, O=Esaar Global Institute, L=Delhi, ST=Delhi, C=IN"
+```
+
+### Building for production
+
+```bash
+cd android
+
+# Play Store bundle -> app/build/outputs/bundle/release/app-release.aab
+./gradlew clean
+./gradlew bundleRelease
+
+# Installable APK -> app/build/outputs/apk/release/app-release.apk
+./gradlew assembleRelease
+```
+
+Bump `versionCode` (and `versionName`) in `android/app/build.gradle` before each
+Play Store upload — the store rejects a `versionCode` it has already seen.

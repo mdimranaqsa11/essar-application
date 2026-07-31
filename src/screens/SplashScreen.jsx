@@ -33,7 +33,7 @@ export function SplashScreen({ navigation }) {
             resizeMode="contain"
           />
         </View>
-        <Text style={styles.title}>Essar</Text>
+        <Text style={styles.title}>I.Esaar</Text>
         <Text style={styles.tagline}>
           Esaar Global Institute of{'\n'}Medical & Aesthetic Sciences
         </Text>
@@ -67,8 +67,8 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   logoImage: {
-    width: 88,
-    height: 88,
+    width: 120,
+    height: 120,
   },
   title: {
     fontSize: 48,

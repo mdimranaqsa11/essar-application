@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
@@ -7,10 +7,11 @@ import { Colors } from '@/constants/Colors';
 import { router } from '@/src/navigation/router';
 import { coursesService } from '@/services/courses';
 import { deriveCourseType } from '@/utils/courseType';
-import { getAuthData, getBookmarkedCourseIds, toggleBookmarkedCourse } from '@/utils/storage';
+import { getAuthData } from '@/utils/storage';
+// import { getBookmarkedCourseIds, toggleBookmarkedCourse } from '@/utils/storage';
 
 export function CourseListCard({ course, isEnrolled = false, isAdmin = false }) {
-  const [bookmarked, setBookmarked] = useState(false);
+  // const [bookmarked, setBookmarked] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
   const [loginPromptVisible, setLoginPromptVisible] = useState(false);
   const showToast = useToast();
@@ -19,14 +20,14 @@ export function CourseListCard({ course, isEnrolled = false, isAdmin = false }) 
     ? Math.round(((course.originalPrice - course.price) / course.originalPrice) * 100)
     : 0;
 
-  useEffect(() => {
-    getBookmarkedCourseIds().then((ids) => setBookmarked(ids.includes(course.$id)));
-  }, [course.$id]);
+  // useEffect(() => {
+  //   getBookmarkedCourseIds().then((ids) => setBookmarked(ids.includes(course.$id)));
+  // }, [course.$id]);
 
-  const handleBookmark = async () => {
-    const next = await toggleBookmarkedCourse(course.$id);
-    setBookmarked(next.includes(course.$id));
-  };
+  // const handleBookmark = async () => {
+  //   const next = await toggleBookmarkedCourse(course.$id);
+  //   setBookmarked(next.includes(course.$id));
+  // };
 
   const handlePress = () => router.push(`/course/${course.$id}`);
 
@@ -72,13 +73,13 @@ export function CourseListCard({ course, isEnrolled = false, isAdmin = false }) 
           ) : (
             <View />
           )}
-          <TouchableOpacity onPress={handleBookmark} hitSlop={8}>
+          {/* <TouchableOpacity onPress={handleBookmark} hitSlop={8}>
             <Ionicons
               name={bookmarked ? 'heart' : 'heart-outline'}
               size={20}
               color={bookmarked ? '#e11d48' : Colors.textLight}
             />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         <Text style={styles.title} numberOfLines={2}>

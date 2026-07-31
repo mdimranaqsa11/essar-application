@@ -1,23 +1,22 @@
 import { Colors } from '@/constants/Colors';
 import { router } from '@/src/navigation/router';
 import { deriveCourseType } from '@/utils/courseType';
-import { getBookmarkedCourseIds, toggleBookmarkedCourse } from '@/utils/storage';
-import { useEffect, useState } from 'react';
+// import { getBookmarkedCourseIds, toggleBookmarkedCourse } from '@/utils/storage';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 export function PopularCourseCompactCard({ course }) {
-  const [bookmarked, setBookmarked] = useState(false);
+  // const [bookmarked, setBookmarked] = useState(false);
   const type = deriveCourseType(course.title);
 
-  useEffect(() => {
-    getBookmarkedCourseIds().then((ids) => setBookmarked(ids.includes(course.$id)));
-  }, [course.$id]);
+  // useEffect(() => {
+  //   getBookmarkedCourseIds().then((ids) => setBookmarked(ids.includes(course.$id)));
+  // }, [course.$id]);
 
-  const handleBookmark = async () => {
-    const next = await toggleBookmarkedCourse(course.$id);
-    setBookmarked(next.includes(course.$id));
-  };
+  // const handleBookmark = async () => {
+  //   const next = await toggleBookmarkedCourse(course.$id);
+  //   setBookmarked(next.includes(course.$id));
+  // };
 
   return (
     <TouchableOpacity
@@ -32,13 +31,13 @@ export function PopularCourseCompactCard({ course }) {
             <Text style={styles.tagText}>{type.label.toUpperCase()}</Text>
           </View>
         )}
-        <TouchableOpacity style={styles.bookmarkButton} onPress={handleBookmark} hitSlop={8}>
+        {/* <TouchableOpacity style={styles.bookmarkButton} onPress={handleBookmark} hitSlop={8}>
           <Ionicons
             name={bookmarked ? 'bookmark' : 'bookmark-outline'}
             size={16}
             color={bookmarked ? Colors.primary : Colors.text}
           />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
       <View style={styles.content}>
