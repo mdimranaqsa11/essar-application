@@ -31,5 +31,21 @@ target 'EssarApplication' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+
+    # Xcode 26 / newer Apple Clang miscompiles fmt's internal consteval call
+    # sites (fmtlib/fmt#3908), causing "call to consteval function ... is
+    # not a constant expression" errors. Force the non-consteval fallback.
+    fmt_base_header = File.join(__dir__, 'Pods', 'fmt', 'include', 'fmt', 'base.h')
+    if File.exist?(fmt_base_header)
+      contents = File.read(fmt_base_header)
+      marker = '#undef FMT_USE_CONSTEVAL'
+      unless contents.include?(marker)
+        patched = contents.sub(
+          "#if FMT_USE_CONSTEVAL\n#  define FMT_CONSTEVAL consteval",
+          "#{marker}\n#define FMT_USE_CONSTEVAL 0\n#if FMT_USE_CONSTEVAL\n#  define FMT_CONSTEVAL consteval"
+        )
+        File.write(fmt_base_header, patched) unless patched == contents
+      end
+    end
   end
 end
