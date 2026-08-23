@@ -1,14 +1,16 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -28,6 +30,15 @@ export function LoginScreen() {
   const [formError, setFormError] = useState('');
   const [loading, setLoading] = useState(false);
   // const [forgotModalVisible, setForgotModalVisible] = useState(false);
+
+  // Hero section has a dark teal background, so the status bar needs light
+  // (white) content here — the rest of the app uses dark-content on white.
+  useFocusEffect(
+    useCallback(() => {
+      StatusBar.setBarStyle('light-content');
+      return () => StatusBar.setBarStyle('dark-content');
+    }, [])
+  );
 
   const clearFieldError = (field) => {
     if (errors[field]) {
