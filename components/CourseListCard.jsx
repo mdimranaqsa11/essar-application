@@ -16,9 +16,6 @@ export function CourseListCard({ course, isEnrolled = false, isAdmin = false }) 
   const [loginPromptVisible, setLoginPromptVisible] = useState(false);
   const showToast = useToast();
   const type = deriveCourseType(course.title);
-  const discountPercentage = course.originalPrice
-    ? Math.round(((course.originalPrice - course.price) / course.originalPrice) * 100)
-    : 0;
 
   // useEffect(() => {
   //   getBookmarkedCourseIds().then((ids) => setBookmarked(ids.includes(course.$id)));
@@ -41,7 +38,7 @@ export function CourseListCard({ course, isEnrolled = false, isAdmin = false }) 
     setEnrolling(true);
     try {
       await coursesService.enrollInCourse(authData.user.$id, course.$id);
-      showToast('You are now enrolled in this course!', 'success');
+      showToast('Request submitted! Our team will contact you shortly.', 'success');
     } catch (error) {
       showToast(error.message || 'Enrollment failed. Please try again', 'error');
     } finally {
@@ -130,17 +127,6 @@ export function CourseListCard({ course, isEnrolled = false, isAdmin = false }) 
         </View>
 
         <View style={styles.footerRow}>
-          <View style={styles.priceGroup}>
-            <Text style={styles.price}>₹{course.price?.toLocaleString('en-IN')}</Text>
-            {discountPercentage > 0 && (
-              <View style={styles.priceMetaRow}>
-                <Text style={styles.originalPrice}>
-                  ₹{course.originalPrice.toLocaleString('en-IN')}
-                </Text>
-                <Text style={styles.discountText}>{discountPercentage}% off</Text>
-              </View>
-            )}
-          </View>
           {!isAdmin &&
             (isEnrolled ? (
               <View style={styles.enrolledBadge}>
@@ -155,7 +141,7 @@ export function CourseListCard({ course, isEnrolled = false, isAdmin = false }) 
                 activeOpacity={0.85}
               >
                 <Text style={styles.enrollButtonText}>
-                  {enrolling ? 'Enrolling...' : 'Enroll Now'}
+                  {enrolling ? 'Requesting...' : 'Request Info'}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -166,7 +152,7 @@ export function CourseListCard({ course, isEnrolled = false, isAdmin = false }) 
       visible={loginPromptVisible}
       icon="log-in-outline"
       title="Login Required"
-      message="Please login to enroll in this course"
+      message="Please login to request info about this course"
       cancelText="Cancel"
       confirmText="Login"
       onCancel={() => setLoginPromptVisible(false)}
@@ -291,32 +277,8 @@ const styles = StyleSheet.create({
   },
   footerRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'center',
-  },
-  priceGroup: {
-    flexShrink: 1,
-  },
-  price: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.text,
-  },
-  priceMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 2,
-  },
-  originalPrice: {
-    fontSize: 11,
-    color: Colors.textLight,
-    textDecorationLine: 'line-through',
-  },
-  discountText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#4CAF50',
   },
   enrollButton: {
     backgroundColor: Colors.primary,

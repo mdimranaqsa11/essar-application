@@ -57,6 +57,15 @@ export const authService = {
     }
   },
 
+  // DELETE /api/users/me — permanently deletes the account server-side (cascades
+  // enrollments/refresh tokens). Only clears the local session once the server has
+  // confirmed the deletion, so a failed request leaves the user signed in to retry.
+  async deleteAccount() {
+    const token = await getAccessToken();
+    await apiRequest('/api/users/me', { method: 'DELETE', token });
+    await clearAuthData();
+  },
+
   // GET /api/auth/me
   async getCurrentUser() {
     try {

@@ -26,17 +26,13 @@ export const CourseCard = ({ course, isEnrolled = false, isAdmin = false }) => {
     setEnrolling(true);
     try {
       await coursesService.enrollInCourse(authData.user.$id, course.$id);
-      showToast("You are now enrolled in this course!", "success");
+      showToast("Request submitted! Our team will contact you shortly.", "success");
     } catch (error) {
       showToast(error.message || "Enrollment failed. Please try again", "error");
     } finally {
       setEnrolling(false);
     }
   };
-
-  const discountPercentage = course.originalPrice
-    ? Math.round(((course.originalPrice - course.price) / course.originalPrice) * 100)
-    : 0;
 
   return (
     <>
@@ -57,11 +53,6 @@ export const CourseCard = ({ course, isEnrolled = false, isAdmin = false }) => {
             <Text style={styles.ratingText}>{course.rating.toFixed(1)}</Text>
           </View>
         )}
-        {discountPercentage > 0 && (
-          <View style={styles.discountBadge}>
-            <Text style={styles.discountBadgeText}>{discountPercentage}% OFF</Text>
-          </View>
-        )}
       </View>
 
       <View style={styles.content}>
@@ -74,13 +65,6 @@ export const CourseCard = ({ course, isEnrolled = false, isAdmin = false }) => {
         )}
 
         <View style={styles.footerRow}>
-          <View style={styles.priceRow}>
-            <Text style={styles.price}>₹{course.price}</Text>
-            {course.originalPrice && (
-              <Text style={styles.originalPrice}>₹{course.originalPrice}</Text>
-            )}
-          </View>
-
           {!isAdmin &&
             (isEnrolled ? (
               <TouchableOpacity
@@ -98,7 +82,7 @@ export const CourseCard = ({ course, isEnrolled = false, isAdmin = false }) => {
                 activeOpacity={0.85}
               >
                 <Text style={styles.enrollButtonText}>
-                  {enrolling ? "Enrolling..." : "Enroll Now"}
+                  {enrolling ? "Requesting..." : "Request Info"}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -109,7 +93,7 @@ export const CourseCard = ({ course, isEnrolled = false, isAdmin = false }) => {
       visible={loginPromptVisible}
       icon="log-in-outline"
       title="Login Required"
-      message="Please login to enroll in this course"
+      message="Please login to request info about this course"
       cancelText="Cancel"
       confirmText="Login"
       onCancel={() => setLoginPromptVisible(false)}
@@ -164,20 +148,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#000000",
   },
-  discountBadge: {
-    position: "absolute",
-    top: 12,
-    left: 12,
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-  },
-  discountBadgeText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: Colors.white,
-  },
   content: {
     padding: 14,
   },
@@ -196,23 +166,7 @@ const styles = StyleSheet.create({
   footerRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-  },
-  priceRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    flexShrink: 1,
-  },
-  price: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: Colors.text,
-  },
-  originalPrice: {
-    fontSize: 13,
-    color: "#999999",
-    textDecorationLine: "line-through",
+    justifyContent: "flex-end",
   },
   enrollButton: {
     backgroundColor: Colors.primary,

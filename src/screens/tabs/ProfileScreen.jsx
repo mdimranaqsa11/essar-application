@@ -32,6 +32,8 @@ export function ProfileScreen() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [photoPickerVisible, setPhotoPickerVisible] = useState(false);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const showToast = useToast();
   const menu = useSideMenu();
 
@@ -74,6 +76,19 @@ export function ProfileScreen() {
     setLogoutModalVisible(false);
     await authService.logout();
     router.replace('/(auth)/login');
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      await authService.deleteAccount();
+      setDeleteModalVisible(false);
+      router.replace('/(auth)/login');
+    } catch (error) {
+      showToast(error.message || 'Failed to delete account. Please try again', 'error');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const uploadAvatar = async (asset) => {
@@ -140,6 +155,14 @@ export function ProfileScreen() {
             icon: 'log-out-outline',
             danger: true,
             onPress: () => setLogoutModalVisible(true),
+          },
+          {
+            key: 'delete-account',
+            title: 'Delete Account',
+            subtitle: 'Permanently delete your account and data',
+            icon: 'trash-outline',
+            danger: true,
+            onPress: () => setDeleteModalVisible(true),
           },
         ]
       : []),
@@ -335,6 +358,20 @@ export function ProfileScreen() {
         destructive
         onCancel={() => setLogoutModalVisible(false)}
         onConfirm={handleLogout}
+      />
+
+      <ConfirmModal
+        visible={deleteModalVisible}
+        icon="trash-outline"
+        iconColor={Colors.error}
+        title="Delete Account"
+        message="This will permanently delete your account and all associated data, including your enrollments. This action cannot be undone."
+        cancelText="Cancel"
+        confirmText={deleting ? 'Deleting...' : 'Delete'}
+        destructive
+        confirmDisabled={deleting}
+        onCancel={() => setDeleteModalVisible(false)}
+        onConfirm={handleDeleteAccount}
       />
     </SafeAreaView>
   );

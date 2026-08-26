@@ -55,15 +55,12 @@ export function PopularCourseCompactCard({ course }) {
           </View>
         )}
 
-        <View style={styles.footerRow}>
-          {course.duration && (
-            <View style={styles.durationRow}>
-              <Ionicons name="time-outline" size={13} color={Colors.textLight} />
-              <Text style={styles.durationText}>{course.duration}</Text>
-            </View>
-          )}
-          <Text style={styles.price}>₹{course.price}</Text>
-        </View>
+        {course.duration && (
+          <View style={styles.durationRow}>
+            <Ionicons name="time-outline" size={13} color={Colors.textLight} />
+            <Text style={styles.durationText}>{course.duration}</Text>
+          </View>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -141,11 +138,6 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     fontWeight: '600',
   },
-  footerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
   durationRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -154,10 +146,5 @@ const styles = StyleSheet.create({
   durationText: {
     fontSize: 11,
     color: Colors.textLight,
-  },
-  price: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.text,
   },
 });

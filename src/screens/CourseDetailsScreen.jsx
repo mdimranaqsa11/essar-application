@@ -80,9 +80,9 @@ export function CourseDetailsScreen() {
     try {
       await coursesService.enrollInCourse(authData.user.$id, id);
       setIsEnrolled(true);
-      showToast("You are now enrolled in this course!", "success");
+      showToast("Request submitted! Our team will contact you shortly.", "success");
     } catch (error) {
-      showToast(error.message || "Enrollment failed. Please try again", "error");
+      showToast(error.message || "Request failed. Please try again", "error");
     } finally {
       setEnrolling(false);
     }
@@ -235,24 +235,6 @@ export function CourseDetailsScreen() {
             )}
           </View>
 
-          {/* Price */}
-          {course.price > 0 ? (
-            <View style={styles.priceContainer}>
-              <Text style={styles.price}>₹{course.price.toLocaleString('en-IN')}</Text>
-              <View style={styles.priceRight}>
-                <Text style={styles.priceLabel}>One-time payment</Text>
-                <View style={styles.secureBadge}>
-                  <Ionicons name="shield-checkmark" size={12} color={Colors.primary} />
-                  <Text style={styles.secureBadgeText}>Secure & Safe</Text>
-                </View>
-              </View>
-            </View>
-          ) : (
-            <View style={styles.freeContainer}>
-              <Text style={styles.freeText}>FREE COURSE</Text>
-            </View>
-          )}
-
           {/* Description */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>About This Course</Text>
@@ -392,24 +374,16 @@ export function CourseDetailsScreen() {
             <Ionicons name="arrow-forward" size={18} color={Colors.white} />
           </TouchableOpacity>
         ) : (
-          <View style={styles.footerRow}>
-            <View>
-              <Text style={styles.footerPrice}>
-                {course.price > 0 ? `₹${course.price.toLocaleString('en-IN')}` : 'FREE'}
-              </Text>
-              {course.price > 0 && <Text style={styles.footerPriceLabel}>One-time payment</Text>}
-            </View>
-            <TouchableOpacity
-              style={styles.enrollButton}
-              onPress={handleEnroll}
-              disabled={enrolling}
-            >
-              <Text style={styles.enrollButtonText}>
-                {enrolling ? 'Enrolling...' : 'Enroll Now'}
-              </Text>
-              <Ionicons name="arrow-forward" size={18} color={Colors.white} />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={styles.enrollButton}
+            onPress={handleEnroll}
+            disabled={enrolling}
+          >
+            <Text style={styles.enrollButtonText}>
+              {enrolling ? 'Requesting...' : 'Request Info'}
+            </Text>
+            <Ionicons name="arrow-forward" size={18} color={Colors.white} />
+          </TouchableOpacity>
         )}
       </View>
 
@@ -417,7 +391,7 @@ export function CourseDetailsScreen() {
         visible={loginPromptVisible}
         icon="log-in-outline"
         title="Login Required"
-        message="Please login to enroll in this course"
+        message="Please login to request info about this course"
         cancelText="Cancel"
         confirmText="Login"
         onCancel={() => setLoginPromptVisible(false)}
@@ -575,50 +549,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.textLight,
   },
-  priceContainer: {
-    backgroundColor: Colors.surface,
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 24,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  price: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: Colors.primary,
-  },
-  priceRight: {
-    alignItems: "flex-end",
-    gap: 4,
-  },
-  priceLabel: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-  },
-  secureBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  secureBadgeText: {
-    fontSize: 12,
-    color: Colors.primary,
-    fontWeight: "600",
-  },
-  freeContainer: {
-    backgroundColor: "#dcfce7",
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 24,
-    alignItems: "center",
-  },
-  freeText: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#166534",
-  },
   section: {
     marginBottom: 24,
   },
@@ -747,20 +677,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
-  },
-  footerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  footerPrice: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: Colors.text,
-  },
-  footerPriceLabel: {
-    fontSize: 12,
-    color: Colors.textLight,
   },
   enrollButton: {
     flexDirection: "row",

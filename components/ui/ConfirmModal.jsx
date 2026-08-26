@@ -11,6 +11,7 @@ export function ConfirmModal({
   cancelText = 'Cancel',
   confirmText = 'Confirm',
   destructive = false,
+  confirmDisabled = false,
   onCancel,
   onConfirm,
 }) {
@@ -33,9 +34,14 @@ export function ConfirmModal({
               <Text style={styles.cancelButtonText}>{cancelText}</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.confirmButton, destructive && styles.confirmButtonDestructive]}
+              style={[
+                styles.confirmButton,
+                destructive && styles.confirmButtonDestructive,
+                confirmDisabled && styles.confirmButtonDisabled,
+              ]}
               onPress={onConfirm}
               activeOpacity={0.85}
+              disabled={confirmDisabled}
             >
               <Text style={styles.confirmButtonText}>{confirmText}</Text>
             </TouchableOpacity>
@@ -111,6 +117,9 @@ const styles = StyleSheet.create({
   },
   confirmButtonDestructive: {
     backgroundColor: Colors.error,
+  },
+  confirmButtonDisabled: {
+    opacity: 0.6,
   },
   confirmButtonText: {
     fontSize: 14,

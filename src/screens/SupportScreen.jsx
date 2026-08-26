@@ -20,7 +20,7 @@ const HELP_CATEGORIES = [
 const FAQS = [
   {
     question: 'How does enrollment work?',
-    answer: 'Tap "Enroll Now" on any course to reserve your seat instantly — our team will follow up regarding payment and onboarding.',
+    answer: 'Tap "Request Info" on any course to send an enrollment request — our team will follow up regarding payment and onboarding.',
   },
   {
     question: 'How can I access my course lessons?',
